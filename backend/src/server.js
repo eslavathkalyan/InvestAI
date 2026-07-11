@@ -32,13 +32,29 @@ const startServer = async () => {
   const app = express();
 
   // Scoped to the frontend's actual URL instead of allowing any
-  // origin. This matters once deployed: frontend (Vercel) and
-  // backend (Render/Railway) live on different domains, so an
-  // unrestricted cors() would work by accident, not by design. Reuses
-  // CLIENT_URL - the same variable that builds the email verification
-  // and password reset links - so there's one source of truth for
-  // "where the frontend lives" instead of two.
-  app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
+  // origin. This handles trailing slashes dynamically, supports localhost
+  // for development, and allows any *.vercel.app domain to connect,
+  // preventing CORS blocks across environment redeploys.
+  const allowedOrigins = [
+    process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, "") : null,
+    "http://localhost:5173",
+    "http://localhost:5000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5000"
+  ].filter(Boolean);
+
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const normalizedOrigin = origin.replace(/\/$/, "");
+      if (allowedOrigins.includes(normalizedOrigin) || normalizedOrigin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
+    credentials: true
+  }));
   app.use(express.json()); // parses JSON request bodies into req.body
 
   app.get("/api/health", (req, res) => {
