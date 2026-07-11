@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Portfolio", to: "/portfolio" },
   { label: "AI Research", to: "/research" },
+  { label: "Voice Analyst", to: "/voice-analyst" },
   { label: "Watchlist", to: "/watchlist" },
   { label: "Market Insights", to: "/market-insights" },
   { label: "Company Screener", to: "/company-screener" },
@@ -22,6 +23,7 @@ const PRIMARY_LINKS = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Portfolio", to: "/portfolio" },
   { label: "AI Research", to: "/research" },
+  { label: "Voice Analyst", to: "/voice-analyst" },
   { label: "Company Screener", to: "/company-screener" },
 ];
 

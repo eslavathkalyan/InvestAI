@@ -10,6 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import connectDB from "./config/database.js";
+import { initPostgres } from "./config/postgres.js";
 import authRoutes from "./routes/authRoutes.js";
 import researchRoutes from "./routes/researchRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -17,10 +18,12 @@ import userRoutes from "./routes/userRoutes.js";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
 import insightRoutes from "./routes/insightRoutes.js";
 import screenerRoutes from "./routes/screenerRoutes.js";
+import livekitRoutes from "./routes/livekitRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
 const startServer = async () => {
   await connectDB();
+  await initPostgres();
 
   const app = express();
 
@@ -57,6 +60,7 @@ const startServer = async () => {
   app.use("/api/portfolio", portfolioRoutes);
   app.use("/api/insights", insightRoutes);
   app.use("/api/screener", screenerRoutes);
+  app.use("/api/livekit", livekitRoutes);
 
   if (process.env.NODE_ENV === "production") {
     const __filename = fileURLToPath(import.meta.url);

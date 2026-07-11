@@ -2,6 +2,7 @@ import ResearchReport from "../models/ResearchReport.js";
 import { runResearch, streamResearch } from "../agents/researchGraph.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { validateStockMarketPresence } from "../utils/stockValidator.js";
+import { runPythonSentimentAnalysis } from "../utils/pythonService.js";
 
 const saveReportFromState = (userId, state) => {
   let ticker = state.company.trim().toUpperCase();
@@ -30,6 +31,7 @@ const saveReportFromState = (userId, state) => {
       financial: state.financial,
       market: state.market,
       risk: state.risk,
+      sentimentAnalysis: state.sentimentAnalysis || null,
     },
   });
 };
@@ -46,7 +48,13 @@ const createResearch = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: validation.message });
   }
 
-  const result = await runResearch(company.trim());
+  // Run LangGraph and Python Sentiment script in parallel
+  const [result, sentiment] = await Promise.all([
+    runResearch(company.trim()),
+    runPythonSentimentAnalysis(company.trim())
+  ]);
+
+  result.sentimentAnalysis = sentiment;
   const report = await saveReportFromState(req.user._id, result);
 
   res.status(201).json(report);
@@ -76,6 +84,9 @@ const streamResearchHandler = asyncHandler(async (req, res) => {
 
   try {
     let finalState = null;
+    
+    // Start Python sentiment analysis in parallel with LangGraph stream
+    const sentimentPromise = runPythonSentimentAnalysis(company);
 
     for await (const event of streamResearch(company)) {
       if (event.type === "result") {
@@ -84,6 +95,9 @@ const streamResearchHandler = asyncHandler(async (req, res) => {
         send(event.type, event);
       }
     }
+
+    const sentiment = await sentimentPromise;
+    finalState.sentimentAnalysis = sentiment;
 
     const report = await saveReportFromState(req.user._id, finalState);
     send("done", report);

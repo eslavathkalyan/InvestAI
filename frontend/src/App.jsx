@@ -22,6 +22,7 @@ import Community from "./pages/Community";
 import Settings from "./pages/Settings";
 import Wallet from "./pages/Wallet";
 import Contact from "./pages/Contact";
+import VoiceAnalyst from "./pages/VoiceAnalyst";
 
 const Research = lazy(() => import("./pages/Research"));
 
@@ -131,6 +132,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Contact />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/voice-analyst"
+            element={
+              <ProtectedRoute>
+                <VoiceAnalyst />
               </ProtectedRoute>
             }
           />

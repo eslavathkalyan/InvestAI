@@ -94,6 +94,32 @@ userSchema.methods.generateResetPasswordToken = function () {
   return plainToken;
 };
 
+userSchema.post("save", async function (doc) {
+  try {
+    const { query: pgQuery } = await import("../config/postgres.js");
+    await pgQuery(
+      `INSERT INTO users (id, name, email, role, is_approved, is_verified) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       ON CONFLICT (id) DO UPDATE SET 
+       name = EXCLUDED.name, 
+       email = EXCLUDED.email, 
+       role = EXCLUDED.role, 
+       is_approved = EXCLUDED.is_approved, 
+       is_verified = EXCLUDED.is_verified`,
+      [
+        doc._id.toString(),
+        doc.name,
+        doc.email,
+        doc.role,
+        doc.isApproved || false,
+        doc.isVerified || false
+      ]
+    );
+  } catch (err) {
+    console.error("🐘 PostgreSQL user sync error:", err.message);
+  }
+});
+
 const User = mongoose.model("User", userSchema);
 
 export default User;
