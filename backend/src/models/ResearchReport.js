@@ -10,7 +10,8 @@ class ResearchReportInstance {
     const rawId = row._id;
     this._id = {
       toString: () => rawId,
-      equals: (other) => rawId === (other ? other.toString() : null)
+      equals: (other) => rawId === (other ? other.toString() : null),
+      toJSON: () => rawId
     };
     
     this.userId = row.user_id;

@@ -9,11 +9,12 @@ const generateHexId = () => {
 
 class UserInstance {
   constructor(row) {
-    // Support MongoDB ObjectId comparison semantics (user._id.equals(otherId))
+    // Support MongoDB ObjectId comparison semantics (user._id.equals(otherId)) and JSON serialization for JWT tokens
     const rawId = row._id;
     this._id = {
       toString: () => rawId,
-      equals: (other) => rawId === (other ? other.toString() : null)
+      equals: (other) => rawId === (other ? other.toString() : null),
+      toJSON: () => rawId
     };
 
     this.name = row.name;
