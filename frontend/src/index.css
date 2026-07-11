@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /*
     Light mode. Cream base and navy text per the brief. Gold is the
@@ -10,6 +12,7 @@
     "important" color instead of being used everywhere.
   */
 
+  --color-cream: #F6F3EC;
   --color-paper: #ffffff;
   --color-ink: #16223F;
   --color-navy: #16223F;
