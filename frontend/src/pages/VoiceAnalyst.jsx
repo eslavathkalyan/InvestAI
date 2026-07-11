@@ -11,7 +11,10 @@ const VoiceAnalyst = () => {
   const [micActive, setMicActive] = useState(false);
   const [roomDetails, setRoomDetails] = useState(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState("");
 
+  const recognitionRef = useRef(null);
   const transcriptEndRef = useRef(null);
 
   // Auto-scroll transcript to bottom
@@ -19,7 +22,98 @@ const VoiceAnalyst = () => {
     transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [transcript]);
 
-  // Connect to Livekit
+  // Setup Web Speech Recognition API
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = "en-US";
+
+      rec.onstart = () => {
+        setIsListening(true);
+        setSpeechError("");
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      rec.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        if (event.error === "not-allowed") {
+          setSpeechError("Microphone permission denied.");
+        } else {
+          setSpeechError(`Speech error: ${event.error}`);
+        }
+        setIsListening(false);
+      };
+
+      rec.onresult = async (event) => {
+        const spokenText = event.results[0][0].transcript;
+        if (spokenText && spokenText.trim().length > 0) {
+          await handleUserSpeechInput(spokenText);
+        }
+      };
+
+      recognitionRef.current = rec;
+    } else {
+      console.warn("Web Speech API is not supported in this browser.");
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, [isConnected, selectedAgent]);
+
+  // Handle user speech text submission to backend
+  const handleUserSpeechInput = async (text) => {
+    setTranscript(prev => [...prev, { sender: "user", text }]);
+
+    try {
+      const response = await axios.post("/livekit/chat", {
+        question: text,
+        agent: selectedAgent
+      });
+
+      const { reply } = response.data;
+      setTranscript(prev => [...prev, { sender: "analyst", text: reply }]);
+
+      // Speak response out loud using Web Speech Synthesis API
+      speakOutLoud(reply);
+
+    } catch (err) {
+      console.error("Failed to fetch response for spoken query:", err);
+      setTranscript(prev => [...prev, { sender: "system", text: "Error fetching voice response." }]);
+    }
+  };
+
+  // Speak AI response out loud
+  const speakOutLoud = (text) => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel(); // Cancel any ongoing speech
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Start micro listening manually
+  const startListening = () => {
+    if (recognitionRef.current && isConnected) {
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        console.error("Failed to start voice recognition:", err);
+      }
+    }
+  };
+
+  // Connect to Livekit room (or demo session)
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
@@ -29,18 +123,18 @@ const VoiceAnalyst = () => {
       setRoomDetails({ room, participantName });
       setIsDemoMode(isDemo);
       
-      // Simulate connection lag
       setTimeout(() => {
         setIsConnected(true);
         setIsConnecting(false);
         setMicActive(true);
         
-        // Add connected welcome message
         setTranscript(prev => [
           ...prev,
           { sender: "system", text: `Connected to room: ${room} as ${participantName} (${isDemo ? "Demo Simulation Mode" : "Livekit Active Mode"})` },
           { sender: "analyst", text: `I am ready as the ${selectedAgent}. Speak or ask me anything about the stock market.` }
         ]);
+
+        speakOutLoud(`I am ready as the ${selectedAgent}. Click the tap to speak button to talk to me.`);
       }, 1500);
 
     } catch (error) {
@@ -54,8 +148,15 @@ const VoiceAnalyst = () => {
   };
 
   const handleDisconnect = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
+    }
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
     setIsConnected(false);
     setMicActive(false);
+    setIsListening(false);
     setTranscript(prev => [
       ...prev,
       { sender: "system", text: "Disconnected from voice channel." }
@@ -65,11 +166,12 @@ const VoiceAnalyst = () => {
   // Simulate speaking and receiving agent response
   const triggerSimulation = (userText, responseText) => {
     setTranscript(prev => [...prev, { sender: "user", text: userText }]);
+    speakOutLoud(responseText);
     
     // Simulate thinking lag
     setTimeout(() => {
       setTranscript(prev => [...prev, { sender: "analyst", text: responseText }]);
-    }, 1800);
+    }, 1200);
   };
 
   const handleSimulationChoice = (choice) => {
@@ -111,16 +213,26 @@ const VoiceAnalyst = () => {
               <div className="flex flex-col items-center justify-center space-y-6">
                 {/* Simulated Animated Pulse / Waveform */}
                 <div className="flex justify-center items-center space-x-2">
-                  <div className="w-4 h-16 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-4 h-24 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-                  <div className="w-4 h-32 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.5s' }}></div>
-                  <div className="w-4 h-20 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-4 h-12 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                  <div className={`w-4 h-16 bg-blue-600 rounded-full ${isListening ? "animate-bounce" : ""}`} style={{ animationDelay: '0.1s' }}></div>
+                  <div className={`w-4 h-24 bg-blue-500 rounded-full ${isListening ? "animate-bounce" : ""}`} style={{ animationDelay: '0.3s' }}></div>
+                  <div className={`w-4 h-32 bg-indigo-600 rounded-full ${isListening ? "animate-bounce" : ""}`} style={{ animationDelay: '0.5s' }}></div>
+                  <div className={`w-4 h-20 bg-blue-600 rounded-full ${isListening ? "animate-bounce" : ""}`} style={{ animationDelay: '0.2s' }}></div>
+                  <div className={`w-4 h-12 bg-indigo-500 rounded-full ${isListening ? "animate-bounce" : ""}`} style={{ animationDelay: '0.4s' }}></div>
                 </div>
                 
-                <div className="text-center">
+                <div className="text-center px-4">
                   <p className="text-sm font-semibold text-slate-600">Connected with {selectedAgent}</p>
-                  <p className="text-xs text-slate-400 mt-1">Speak now, or use the quick query options</p>
+                  <p className="text-xs text-slate-400 mt-1">Click the button below to speak</p>
+                  
+                  {isListening && (
+                    <span className="inline-block mt-3 text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full animate-pulse font-semibold">
+                      🔴 Listening to your voice...
+                    </span>
+                  )}
+
+                  {speechError && (
+                    <p className="text-xs text-red-500 mt-2 font-medium">{speechError}</p>
+                  )}
                 </div>
               </div>
             ) : (
@@ -171,12 +283,21 @@ const VoiceAnalyst = () => {
                   )}
                 </button>
               ) : (
-                <button
-                  onClick={handleDisconnect}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl py-3.5 text-sm font-semibold shadow-sm transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  <span>🚫</span> Disconnect Call
-                </button>
+                <div className="w-full flex gap-3">
+                  <button
+                    onClick={startListening}
+                    disabled={isListening}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:cursor-not-allowed text-white rounded-xl py-3.5 text-sm font-semibold shadow-sm transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <span>🎙️</span> {isListening ? "Listening..." : "Tap to Speak"}
+                  </button>
+                  <button
+                    onClick={handleDisconnect}
+                    className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 py-3.5 text-sm font-semibold shadow-sm transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    Disconnect Call
+                  </button>
+                </div>
               )}
             </div>
           </div>
