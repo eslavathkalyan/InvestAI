@@ -280,6 +280,12 @@ progress  { stage: "decision", label: "Preparing investment decision" }
 done      { ...full saved report }
 ```
 
+### Full Example Reports
+For complete outputs across different companies and decisions, see the [example_runs](./example_runs) directory:
+- [Tesla (TSLA) — INVEST (78% Confidence)](./example_runs/tesla_report.json)
+- [NVIDIA (NVDA) — INVEST (92% Confidence)](./example_runs/nvidia_report.json)
+- [Apple (AAPL) — PASS (72% Confidence)](./example_runs/apple_report.json)
+
 ---
 
 ## Design decisions
@@ -399,6 +405,18 @@ Deliberate scope cuts, with reasoning — not oversights:
 - httpOnly cookie-based auth instead of `localStorage`
 - A self-serve "request access" flow instead of admin-only approval
 - Company autocomplete in the search bar (currently free-text only)
+
+---
+
+## LLM Chat Session Transcripts
+
+This project was built iteratively in collaboration with the Gemini LLM assistant. In accordance with the bonus requirements, all of the interactive conversation sessions and execution logs have been extracted from the local database and compiled into human-readable Markdown format.
+
+You can inspect the complete logs of our development, refactoring, and debugging sessions in the [llm_transcripts](./llm_transcripts) directory:
+- [Session Index & Overview](./llm_transcripts/README.md)
+- [Core Frontend/Backend Deployment & Configuration](./llm_transcripts/session_bd8a477d.md)
+- [Real-time Notifications & Date-Time fixes](./llm_transcripts/session_312d4a41.md)
+- [OTP verification & Admin redirection controls](./llm_transcripts/session_e3016e7b.md)
 
 ---
 
