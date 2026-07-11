@@ -79,9 +79,9 @@ class UserInstance {
       this.isBlocked || false,
       this.walletBalance || 0,
       this.verificationToken || null,
-      this.verificationTokenExpire || null,
+      this.verificationTokenExpire ? new Date(this.verificationTokenExpire) : null,
       this.resetPasswordToken || null,
-      this.resetPasswordExpire || null,
+      this.resetPasswordExpire ? new Date(this.resetPasswordExpire) : null,
       JSON.stringify(this.watchlist || [])
     ]);
 
