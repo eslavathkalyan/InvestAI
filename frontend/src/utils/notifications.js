@@ -1,10 +1,9 @@
-// LocalStorage-backed dynamic notifications with custom window events to notify Navbar
+
 
 const getStorageKey = (email) => {
   return email ? `investai_notifications_${email}` : 'investai_notifications_anonymous';
 };
 
-// Initial default notifications with realistic mock datetimes
 const getInitialNotifications = () => [
   {
     id: 1,
@@ -78,10 +77,9 @@ export const addNotification = (email, category, title, desc) => {
     isUnread: true
   };
 
-  const updated = [newNotif, ...list].slice(0, 30); // Keep max 30 notifications
+  const updated = [newNotif, ...list].slice(0, 30); 
   localStorage.setItem(key, JSON.stringify(updated));
 
-  // Dispatch custom window event so Navbar/others know to update
   window.dispatchEvent(new Event("investai-notifications-update"));
 };
 

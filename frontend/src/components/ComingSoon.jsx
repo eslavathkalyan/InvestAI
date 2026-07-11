@@ -1,10 +1,5 @@
 import { Link } from "react-router-dom";
 
-// Several nav items (Portfolio, Watchlist, Market Insights, Company
-// Screener, Community) are part of the navbar spec but aren't part
-// of the core AI research flow this assignment is scoped around.
-// Rather than leave them as dead links or fake the feature, they
-// render this shared placeholder - honest about what exists today.
 const ComingSoon = ({ title }) => {
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4">

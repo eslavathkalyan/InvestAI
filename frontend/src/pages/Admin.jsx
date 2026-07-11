@@ -37,7 +37,6 @@ const Admin = () => {
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
 
-  // Inspection states
   const [selectedUser, setSelectedUser] = useState(null);
   const [inspectPortfolio, setInspectPortfolio] = useState([]);
   const [inspectReports, setInspectReports] = useState([]);
@@ -204,7 +203,7 @@ const Admin = () => {
         </div>
       </div>
 
-      {/* User Inspection Section */}
+      {}
       {selectedUser && (
         <div className="mt-8 bg-paper rounded-2xl shadow-card border border-ink/5 overflow-hidden">
           <div className="px-5 py-4 border-b border-ink/5 bg-paper/50 flex items-center justify-between">
@@ -226,7 +225,7 @@ const Admin = () => {
             <p className="text-center text-caution text-sm py-10">{inspectError}</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-              {/* Portfolio Performance Column */}
+              {}
               <div>
                 <h3 className="font-semibold text-sm text-ink mb-3 flex items-center gap-2">
                   <span>📈</span> Investments & Performance
@@ -268,7 +267,7 @@ const Admin = () => {
                 )}
               </div>
 
-              {/* Research Reports Column */}
+              {}
               <div>
                 <h3 className="font-semibold text-sm text-ink mb-3 flex items-center gap-2">
                   <span>🔬</span> AI Analyzing & Research Reports

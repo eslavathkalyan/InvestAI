@@ -9,8 +9,6 @@ const UserMenu = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Closes the dropdown when a click lands anywhere outside it -
-  // standard pattern for any dropdown/popover.
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -29,9 +27,6 @@ const UserMenu = () => {
 
   if (!user) return null;
 
-  // First letter of the user's name, shown in a circle instead of a
-  // placeholder image - no image asset needed, and it's still a
-  // clear personal identifier.
   const initial = user.name?.charAt(0).toUpperCase() || "?";
 
   return (

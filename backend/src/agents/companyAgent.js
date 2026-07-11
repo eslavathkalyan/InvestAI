@@ -10,11 +10,6 @@ const companySchema = z.object({
   competitors: z.array(z.string()).describe("The company's main competitors"),
 });
 
-// First node in the graph. Its only job is establishing who the
-// company IS and what it does. Every later agent reads
-// `companyOverview` from shared state instead of re-deriving it, so
-// all four downstream agents reason about the same set of facts
-// instead of each forming their own (possibly inconsistent) picture.
 const runCompanyAgent = async (state) => {
   const llm = getLLM().withStructuredOutput(companySchema, {
     name: "CompanyOverview",

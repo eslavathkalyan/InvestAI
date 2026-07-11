@@ -23,10 +23,6 @@ import Settings from "./pages/Settings";
 import Wallet from "./pages/Wallet";
 import Contact from "./pages/Contact";
 
-// Research pulls in three.js + fiber + drei for the 3D scene, which
-// alone is over 1MB minified. Lazy-loading it means someone just
-// logging in or reading the landing page never downloads that
-// weight - it only loads once they actually navigate to /research.
 const Research = lazy(() => import("./pages/Research"));
 
 const App = () => {

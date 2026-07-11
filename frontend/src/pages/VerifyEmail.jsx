@@ -11,9 +11,9 @@ const VerifyEmail = () => {
 
   const [email, setEmail] = useState(initialEmail);
   const [otp, setOtp] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [status, setStatus] = useState("idle"); 
   const [message, setMessage] = useState(infoMsg || "Enter the 6-digit OTP code sent to your email.");
-  const [resendTimer, setResendTimer] = useState(60); // start at 60s cooldown
+  const [resendTimer, setResendTimer] = useState(60); 
   const [resending, setResending] = useState(false);
 
   const { login } = useAuth();

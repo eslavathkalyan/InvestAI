@@ -4,12 +4,6 @@ import generateToken from "../utils/generateToken.js";
 import sendEmail from "../utils/sendEmail.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-// POST /api/auth/register
-// Creates the user and emails a verification link. The account
-// exists in the database right away, but login is blocked until the
-// link is clicked (see `login` below).
-// POST /api/auth/register
-// Creates the user and emails a verification OTP.
 const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -26,7 +20,6 @@ const register = asyncHandler(async (req, res) => {
       .json({ message: "An account with this email already exists" });
   }
 
-  // Strictly enforce that only kalyan's email can have admin privileges.
   const isAdminEmail = email.toLowerCase() === "eslavathkalyan143rn@gmail.com";
   const role = isAdminEmail ? "admin" : "user";
   const isApproved = isAdminEmail;
@@ -35,7 +28,7 @@ const register = asyncHandler(async (req, res) => {
   const user = await User.create({
     name,
     email,
-    password: isAdminEmail ? "Kalyan@2005" : password, // Enforce correct password for admin
+    password: isAdminEmail ? "Kalyan@2005" : password, 
     role,
     isApproved,
     isVerified,
@@ -47,11 +40,10 @@ const register = asyncHandler(async (req, res) => {
     });
   }
 
-  // Generate 6-digit numeric OTP for normal users
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
   user.verificationToken = hashedOtp;
-  user.verificationTokenExpire = Date.now() + 15 * 60 * 1000; // 15 minutes expiry
+  user.verificationTokenExpire = Date.now() + 15 * 60 * 1000; 
   await user.save();
 
   console.log("GENERATED OTP FOR " + user.email + " IS: " + otp);
@@ -76,7 +68,6 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /api/auth/verify-email/:token (preserved for fallback compatibility)
 const verifyEmail = asyncHandler(async (req, res) => {
   const hashedToken = crypto
     .createHash("sha256")
@@ -102,7 +93,6 @@ const verifyEmail = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Email verified. You can now log in." });
 });
 
-// POST /api/auth/verify-otp
 const verifyOtp = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
 
@@ -154,7 +144,6 @@ const verifyOtp = asyncHandler(async (req, res) => {
   });
 });
 
-// POST /api/auth/login
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -166,7 +155,6 @@ const login = asyncHandler(async (req, res) => {
 
   let user;
 
-  // Handle strictly Gated Admin account check and bootstrap
   if (email.toLowerCase() === "eslavathkalyan143rn@gmail.com") {
     if (password !== "Kalyan@2005") {
       return res.status(401).json({ message: "Invalid email or password" });
@@ -174,7 +162,7 @@ const login = asyncHandler(async (req, res) => {
 
     user = await User.findOne({ email: email.toLowerCase() }).select("+password");
     if (!user) {
-      // Automatically bootstrap admin if they don't exist yet
+      
       user = await User.create({
         name: "Eslavath Kalyan",
         email: email.toLowerCase(),
@@ -184,7 +172,7 @@ const login = asyncHandler(async (req, res) => {
         isApproved: true,
       });
     } else {
-      // Force refresh admin role, verification, approval, and password
+      
       user.role = "admin";
       user.isApproved = true;
       user.isVerified = true;
@@ -192,7 +180,7 @@ const login = asyncHandler(async (req, res) => {
       await user.save();
     }
   } else {
-    // Normal user login logic
+    
     user = await User.findOne({ email }).select("+password");
 
     if (!user || !(await user.matchPassword(password))) {
@@ -210,7 +198,6 @@ const login = asyncHandler(async (req, res) => {
     }
   }
 
-  // Generate 6-digit numeric OTP for login verification
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
   user.verificationToken = hashedOtp;
@@ -239,13 +226,10 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-// POST /api/auth/forgot-password
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
 
-  // Same response whether or not the account exists, so this
-  // endpoint can't be used to check which emails are registered.
   const genericMessage = {
     message: "If that email exists, a reset link has been sent.",
   };
@@ -275,7 +259,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
   res.status(200).json(genericMessage);
 });
 
-// PUT /api/auth/reset-password/:token
 const resetPassword = asyncHandler(async (req, res) => {
   const { password } = req.body;
 
@@ -299,7 +282,7 @@ const resetPassword = asyncHandler(async (req, res) => {
       .json({ message: "Reset link is invalid or has expired" });
   }
 
-  user.password = password; // the pre-save hook on User will hash this
+  user.password = password; 
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();
@@ -307,10 +290,6 @@ const resetPassword = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Password updated. You can now log in." });
 });
 
-// GET /api/auth/me
-// Lets the frontend restore "who is logged in" on page load/refresh
-// using only the token saved client-side, without storing user data
-// separately in the browser.
 const getMe = asyncHandler(async (req, res) => {
   res.status(200).json({
     id: req.user._id,
@@ -320,7 +299,6 @@ const getMe = asyncHandler(async (req, res) => {
   });
 });
 
-// POST /api/auth/resend-otp
 const resendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
@@ -333,7 +311,6 @@ const resendOtp = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
 
-  // Generate new 6-digit numeric OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
   

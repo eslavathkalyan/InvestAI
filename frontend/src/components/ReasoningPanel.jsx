@@ -14,9 +14,6 @@ const RISK_STYLES = {
   LOW: "bg-positive/10 text-positive",
 };
 
-// analysis matches the ResearchReport.analysis shape exactly:
-// { companyOverview, financial, market, risk } - straight from the
-// four research agents, no reshaping in between.
 const ReasoningPanel = ({ analysis }) => {
   const [active, setActive] = useState("company");
 

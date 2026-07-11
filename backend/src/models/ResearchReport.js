@@ -22,7 +22,7 @@ const researchReportSchema = new mongoose.Schema(
       required: true,
     },
     confidence: {
-      type: Number, // percentage, 0-100
+      type: Number, 
       required: true,
       min: 0,
       max: 100,
@@ -39,10 +39,7 @@ const researchReportSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
-    // Raw output from each LangGraph agent. Kept flexible (Mixed)
-    // because each agent's output shape is different, and this is
-    // what powers the "AI Reasoning" panel without re-running the
-    // whole pipeline every time a saved report is opened.
+
     analysis: {
       companyOverview: { type: mongoose.Schema.Types.Mixed, default: {} },
       financial: { type: mongoose.Schema.Types.Mixed, default: {} },

@@ -13,11 +13,10 @@ const Wallet = () => {
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
-  const [payStatus, setPayStatus] = useState("idle"); // idle | paying | success | error
-  const [paymentStage, setPaymentStage] = useState("contacting"); // contacting | tunnel | authorizing
+  const [payStatus, setPayStatus] = useState("idle"); 
+  const [paymentStage, setPaymentStage] = useState("contacting"); 
 
-  // Withdrawal States
-  const [activeTab, setActiveTab] = useState("deposit"); // deposit | withdraw
+  const [activeTab, setActiveTab] = useState("deposit"); 
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [ifsc, setIfsc] = useState("");
@@ -66,7 +65,6 @@ const Wallet = () => {
     setAccountVerified(false);
     setHolderName("");
 
-    // Simulate real bank account verification API query
     setTimeout(() => {
       setVerifyingAccount(false);
       setAccountVerified(true);
@@ -125,17 +123,14 @@ const Wallet = () => {
     setPayStatus("paying");
     setPaymentStage("contacting");
 
-    // Stage 1 -> Stage 2 after 1000ms
     setTimeout(() => {
       setPaymentStage("tunnel");
     }, 1000);
 
-    // Stage 2 -> Stage 3 after 2000ms
     setTimeout(() => {
       setPaymentStage("authorizing");
     }, 2000);
 
-    // Stage 3 -> Success/Save after 3000ms
     setTimeout(async () => {
       try {
         const amt = Number(amountInput);
@@ -179,7 +174,7 @@ const Wallet = () => {
       )}
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Wallet Balance Card */}
+        {}
         <div className="md:col-span-1 bg-navy text-white rounded-2xl shadow-card p-5 flex flex-col justify-between min-h-[150px]">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-bold tracking-wider text-white/60">Wallet Balance</span>
@@ -197,9 +192,9 @@ const Wallet = () => {
           </div>
         </div>
 
-        {/* Funds Panel (Tabbed: Deposit / Withdraw) */}
+        {}
         <div className="md:col-span-2 bg-paper border border-ink/5 rounded-2xl shadow-card overflow-hidden flex flex-col">
-          {/* Tabs header */}
+          {}
           <div className="flex border-b border-ink/5 bg-cream/20">
             <button
               onClick={() => { setActiveTab("deposit"); setError(""); setSuccess(""); }}
@@ -361,11 +356,11 @@ const Wallet = () => {
         </div>
       </div>
 
-      {/* Simulated Razorpay Overlay */}
+      {}
       {showPayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-xs">
           <div className="w-full max-w-sm bg-[#111624] border border-white/5 rounded-2xl overflow-hidden shadow-2xl text-white">
-            {/* Razorpay Brand Header */}
+            {}
             <div className="bg-[#1b2138] px-5 py-4 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded bg-[#3399FF] flex items-center justify-center font-bold text-white text-xs">R</div>
@@ -391,7 +386,7 @@ const Wallet = () => {
                 </span>
               </div>
 
-              {/* Status Banner indicating Gateway is Working */}
+              {}
               <div className="bg-[#0e2c26]/60 border border-[#10b981]/20 rounded-xl p-3.5 flex items-start gap-2.5">
                 <Activity className="w-4 h-4 text-[#10b981] mt-0.5 shrink-0 animate-pulse" />
                 <div>
@@ -404,7 +399,7 @@ const Wallet = () => {
 
               {payStatus === "paying" && (
                 <div className="text-center py-6 space-y-6">
-                  {/* Outer circle pulse */}
+                  {}
                   <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
                     <div className="absolute inset-0 rounded-full border-4 border-white/5 animate-pulse" />
                     <div className="absolute inset-2 rounded-full border-4 border-dashed border-[#3399FF] animate-spin" />
@@ -413,7 +408,7 @@ const Wallet = () => {
                     {paymentStage === "authorizing" && <Activity className="w-8 h-8 text-[#10b981] animate-pulse" />}
                   </div>
                   
-                  {/* Progress Stages List */}
+                  {}
                   <div className="max-w-xs mx-auto space-y-3 bg-white/5 border border-white/5 rounded-xl p-4 text-left">
                     <div className="flex items-center gap-2.5 text-xs">
                       <span className={`w-4 h-4 rounded-full flex items-center justify-center border font-bold ${
@@ -461,7 +456,7 @@ const Wallet = () => {
 
               {payStatus === "success" && (
                 <div className="text-center py-6 space-y-4">
-                  {/* Beautiful circular drawing checkmark */}
+                  {}
                   <div className="w-20 h-20 mx-auto rounded-full bg-[#10b981]/15 border-2 border-[#10b981]/40 flex items-center justify-center relative overflow-hidden">
                     <div className="absolute inset-0 rounded-full border-4 border-[#10b981] animate-ping opacity-10" />
                     <CheckCircle className="w-10 h-10 text-[#10b981] animate-bounce" />

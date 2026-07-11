@@ -42,7 +42,7 @@ const Community = () => {
           {reports.map((report) => (
             <div key={report._id} className="bg-paper border border-ink/5 rounded-2xl p-6 shadow-card flex flex-col justify-between hover:border-gold/30 hover:shadow-hover transition">
               <div>
-                {/* Header */}
+                {}
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="font-display font-bold text-lg text-ink">{report.company}</h3>
@@ -68,11 +68,11 @@ const Community = () => {
                   </span>
                 </div>
 
-                {/* Body Summary */}
+                {}
                 <p className="text-sm text-ink/75 leading-relaxed line-clamp-3 mb-6">{report.summary}</p>
               </div>
 
-              {/* Footer */}
+              {}
               <div className="border-t border-ink/5 pt-4 flex items-center justify-between">
                 <div className="flex items-center gap-4 text-xs font-medium text-ink/45">
                   <span className="font-mono">{report.confidence}% confidence</span>

@@ -1,7 +1,6 @@
 import React, { Component, useState, useEffect } from "react";
 import Spline from "@splinetool/react-spline";
 
-// Class-based React Error Boundary to catch render-phase crashes from Spline deserialization
 class SplineErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -34,7 +33,6 @@ const SplineModel = ({
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  // Robust watermark removal hook targeting both light DOM and shadow DOMs
   useEffect(() => {
     const hideSplineWatermarks = () => {
       const selectors = [
@@ -45,7 +43,6 @@ const SplineModel = ({
         'div[style*="pointer-events"] a',
       ];
 
-      // Hide in light DOM
       selectors.forEach((sel) => {
         document.querySelectorAll(sel).forEach((el) => {
           el.style.setProperty("display", "none", "important");
@@ -55,7 +52,6 @@ const SplineModel = ({
         });
       });
 
-      // Hide in shadow DOMs
       document.querySelectorAll("*").forEach((el) => {
         if (el.shadowRoot) {
           selectors.forEach((sel) => {
@@ -73,7 +69,6 @@ const SplineModel = ({
     hideSplineWatermarks();
     const interval = setInterval(hideSplineWatermarks, 150);
 
-    // Stop checking after 8 seconds (when the model is fully loaded and settled)
     const timeout = setTimeout(() => {
       clearInterval(interval);
     }, 8000);
@@ -135,10 +130,7 @@ const SplineModel = ({
           <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin opacity-50" />
         </div>
       )}
-      {/* 
-        Container scaled and positioned so the full 3D avatar is visible 
-        and clean without being clipped by the edges.
-      */}
+      {}
       <div className="w-full h-full opacity-100 dark:opacity-100 transition-all duration-1000 spline-container-wrapper">
         <SplineErrorBoundary onError={handleError}>
           <Spline 
@@ -153,5 +145,4 @@ const SplineModel = ({
 };
 
 export default SplineModel;
-
 

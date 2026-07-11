@@ -9,11 +9,6 @@ const decisionSchema = z.object({
   risks: z.array(z.string()).describe("The strongest reasons for caution"),
 });
 
-// The only agent that doesn't do its own research -- it reads what
-// the other four already found in shared state and has to weigh
-// them against each other. This is kept separate from the Risk
-// Agent on purpose: Risk only has to list problems, Decision has to
-// weigh positives against negatives and actually commit to a call.
 const runDecisionAgent = async (state) => {
   const llm = getLLM().withStructuredOutput(decisionSchema, {
     name: "InvestmentDecision",

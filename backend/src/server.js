@@ -19,22 +19,11 @@ import insightRoutes from "./routes/insightRoutes.js";
 import screenerRoutes from "./routes/screenerRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
-
-
-// Wrapped in an async function so app.listen() only runs once the
-// database connection is actually established. Without this, the
-// server would start accepting requests immediately while the DB
-// connection was still pending in the background - a request could
-// arrive and try to query MongoDB before it was ready.
 const startServer = async () => {
   await connectDB();
 
   const app = express();
 
-  // Scoped to the frontend's actual URL instead of allowing any
-  // origin. This handles trailing slashes dynamically, supports localhost
-  // for development, and allows any *.vercel.app domain to connect,
-  // preventing CORS blocks across environment redeploys.
   const allowedOrigins = [
     process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, "") : null,
     "http://localhost:5173",
@@ -55,7 +44,7 @@ const startServer = async () => {
     },
     credentials: true
   }));
-  app.use(express.json()); // parses JSON request bodies into req.body
+  app.use(express.json()); 
 
   app.get("/api/health", (req, res) => {
     res.status(200).json({ status: "ok" });
@@ -69,7 +58,6 @@ const startServer = async () => {
   app.use("/api/insights", insightRoutes);
   app.use("/api/screener", screenerRoutes);
 
-  // Serve static files in production
   if (process.env.NODE_ENV === "production") {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);

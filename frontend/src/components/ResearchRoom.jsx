@@ -29,8 +29,7 @@ const Laptop = () => (
       <boxGeometry args={[0.5, 0.02, 0.35]} />
       <meshStandardMaterial color="#1b2a4a" />
     </mesh>
-    {/* Screen glows faintly in the signal-blue accent color, as if
-        displaying something, without needing an actual texture. */}
+    {}
     <mesh castShadow position={[0, 0.16, -0.17]} rotation={[-0.35, 0, 0]}>
       <boxGeometry args={[0.5, 0.32, 0.02]} />
       <meshStandardMaterial color="#0f172a" emissive="#2f5d8a" emissiveIntensity={0.3} />
@@ -49,9 +48,6 @@ const DocumentStack = () => (
   </group>
 );
 
-// Small floating bars standing in for a financial chart, colored
-// from the same gold/positive/caution palette as the rest of the
-// app rather than introducing a separate "3D scene" color language.
 const ChartPanel = () => {
   const bars = [0.3, 0.55, 0.4, 0.7, 0.5];
   const colors = ["#a87c2c", "#3f7a5c", "#a87c2c", "#3f7a5c", "#b44242"];
@@ -70,15 +66,12 @@ const ChartPanel = () => {
   );
 };
 
-// stage: passed straight through to AnalystAvatar to drive its pose.
-// label: the current progress message, shown floating above the avatar.
 const ResearchRoom = ({ stage = "idle", label }) => {
   return (
     <Canvas shadows camera={{ position: [3.2, 2.4, 4.2], fov: 42 }}>
       <ambientLight intensity={0.55} />
       <directionalLight position={[4, 6, 3]} intensity={1.1} castShadow shadow-mapSize={[1024, 1024]} />
-      {/* Warm accent light near the chart panel, tying the 3D scene
-          back to the gold accent used everywhere else in the app. */}
+      {}
       <pointLight position={[-1.5, 1.8, 1]} intensity={0.4} color="#a87c2c" />
 
       <Suspense fallback={null}>

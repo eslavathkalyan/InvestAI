@@ -6,13 +6,9 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  // Starts true because on first load we don't yet know if there's a
-  // valid session - ProtectedRoute uses this to avoid flashing the
-  // login page for someone who's actually already logged in.
+
   const [loading, setLoading] = useState(true);
 
-  // On first load, if a token was saved from a previous visit, fetch
-  // the matching user so refreshing the page doesn't log people out.
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -23,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
     getMe()
       .then((res) => setUser(res.data))
-      .catch(() => localStorage.removeItem("token")) // token expired or invalid
+      .catch(() => localStorage.removeItem("token")) 
       .finally(() => setLoading(false));
   }, []);
 
@@ -48,6 +44,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Small hook so components write `const { user } = useAuth()` instead
-// of importing both useContext and AuthContext everywhere.
 export const useAuth = () => useContext(AuthContext);

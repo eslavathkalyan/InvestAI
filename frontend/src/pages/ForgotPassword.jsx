@@ -14,9 +14,7 @@ const ForgotPassword = () => {
     try {
       await forgotPassword(email);
     } finally {
-      // The backend intentionally returns the same response whether
-      // or not the email exists, so we show the same message either
-      // way too - matching that behavior on the frontend as well.
+
       setSent(true);
       setSubmitting(false);
     }

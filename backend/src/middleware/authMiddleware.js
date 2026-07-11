@@ -2,9 +2,6 @@ import jwt from "jsonwebtoken";
 import asyncHandler from "../utils/asyncHandler.js";
 import User from "../models/User.js";
 
-// Reads "Authorization: Bearer <token>", verifies it, and loads the
-// matching user onto req.user so any route after this middleware can
-// trust req.user is a real, logged-in, non-blocked user.
 const protect = asyncHandler(async (req, res, next) => {
   let token;
 

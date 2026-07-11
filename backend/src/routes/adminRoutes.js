@@ -14,10 +14,6 @@ import authorize from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-// protect confirms there's a valid logged-in user; authorize("admin")
-// then confirms that user is specifically an admin. Two separate
-// checks stacked, same pattern as researchRoutes.js but with the
-// role middleware (built in Phase 1) actually used for the first time.
 router.use(protect, authorize("admin"));
 
 router.get("/users", getAllUsers);

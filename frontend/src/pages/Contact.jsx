@@ -55,7 +55,7 @@ const Contact = () => {
             rel="noopener noreferrer"
             className="group relative bg-paper border border-ink/5 hover:border-gold/30 rounded-2xl p-6 shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between min-h-[220px]"
           >
-            {/* Background Glow */}
+            {}
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold/0 to-gold/3 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none" />
 
             <div>
@@ -88,7 +88,7 @@ const Contact = () => {
         ))}
       </div>
 
-      {/* Decorative Help Box */}
+      {}
       <div className="mt-12 bg-navy text-white rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-card">
         <div className="text-center sm:text-left">
           <h4 className="font-display font-bold text-lg text-white">

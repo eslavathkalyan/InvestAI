@@ -7,14 +7,14 @@ const validationSchema = z.object({
 });
 
 const COMMON_STOCKS = new Set([
-  // Tickers
+  
   "AAPL", "TSLA", "MSFT", "GOOG", "GOOGL", "AMZN", "NVDA", "META", "NFLX", "AMD", 
   "INTC", "PYPL", "ADBE", "QCOM", "TXN", "AMAT", "MU", "AMGN", "HON", "SBUX", 
   "COST", "CHTR", "GILD", "CMCSA", "FISV", "MDLZ", "REGN", "INTU", "VRTX", "ADP", 
   "ISRG", "TMUS", "MELI", "BKNG", "JD", "KDP", "ADSK", "LMT", "EXC", "BIIB", 
   "WBA", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "WIPRO", "SBIN", 
   "TATAMOTORS", "COALINDIA", "BHARTIARTL", "NIFTY", "SENSEX", "SPY", "VOO", "QQQ",
-  // Names
+  
   "APPLE", "TESLA", "MICROSOFT", "GOOGLE", "ALPHABET", "AMAZON", "NVIDIA", "FACEBOOK", 
   "NETFLIX", "INTEL", "PAYPAL", "ADOBE", "QUALCOMM", "STARBUCKS", "COSTCO", "COMCAST", 
   "INFOSYS", "RELIANCE INDUSTRIES", "TATA CONSULTANCY SERVICES", "TATA MOTORS",
@@ -24,13 +24,11 @@ const COMMON_STOCKS = new Set([
 const isGibberish = (str) => {
   const clean = str.toLowerCase().replace(/[^a-z]/g, "");
   if (clean.length < 3) return false;
-  
-  // If word is longer than 5 chars and has no vowels, it's gibberish
+
   if (clean.length > 5 && !/[aeiouy]/.test(clean)) {
     return true;
   }
-  
-  // Repeating consecutive letters like "aaaaa" or "qweqweqwe"
+
   if (/(.)\1\1\1/.test(clean)) {
     return true;
   }
@@ -98,7 +96,6 @@ export const validateStockMarketPresence = async (companyName) => {
   const query = companyName.trim();
   const normalized = normalizeName(query);
 
-  // 1. Local Gibberish check
   if (isGibberish(query)) {
     return {
       isValid: false,
@@ -106,7 +103,6 @@ export const validateStockMarketPresence = async (companyName) => {
     };
   }
 
-  // 2. Query Yahoo Finance search API (no rate limits, no keys, highly accurate)
   const yahooQuotes = await queryYahooFinance(query);
   if (yahooQuotes !== null) {
     if (yahooQuotes.length === 0) {
@@ -115,12 +111,11 @@ export const validateStockMarketPresence = async (companyName) => {
         message: `"${query}" was not found in the stock market registry. Please check the spelling or change the company name/ticker symbol to get a valid research result.`
       };
     } else {
-      // It has matches, return valid!
+      
       return { isValid: true, message: "Valid stock" };
     }
   }
 
-  // 3. Fallback to local registry if Yahoo Finance is down
   if (COMMON_STOCKS.has(normalized)) {
     return { isValid: true, message: "Valid stock" };
   }
@@ -130,7 +125,6 @@ export const validateStockMarketPresence = async (companyName) => {
     }
   }
 
-  // 4. Live Alpha Vantage check (as secondary fallback)
   const avResult = await queryAlphaVantage(query);
   if (avResult.status === "success") {
     if (avResult.count > 0) {
@@ -143,7 +137,6 @@ export const validateStockMarketPresence = async (companyName) => {
     }
   }
 
-  // 5. LLM structured audit fallback
   try {
     const llm = getLLM().withStructuredOutput(validationSchema, {
       name: "StockValidation"

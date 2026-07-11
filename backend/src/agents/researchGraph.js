@@ -5,10 +5,6 @@ import runMarketAgent from "./marketAgent.js";
 import runRiskAgent from "./riskAgent.js";
 import runDecisionAgent from "./decisionAgent.js";
 
-// Shared state that flows through the graph. Each agent reads what
-// it needs and writes back its own slice. Financial, market and risk
-// write to three different keys, so LangGraph doesn't need a custom
-// reducer to merge their outputs -- there's nothing to merge.
 const ResearchState = Annotation.Root({
   company: Annotation(),
   companyOverview: Annotation(),
@@ -18,18 +14,6 @@ const ResearchState = Annotation.Root({
   decision: Annotation(),
 });
 
-// companyAgent runs first, since every other agent needs to know
-// what the company actually does before analyzing it. Financial,
-// Market and Risk then run IN PARALLEL, since none of them depend on
-// each other -- they only need the company overview. Decision waits
-// for all three to finish (LangGraph runs it exactly once, after its
-// last incoming edge resolves) before making the final call.
-//
-// This roughly triples the speed of that middle stage compared to
-// running all four research agents one after another, and it mirrors
-// how a real team would work: three analysts reviewing the same
-// company brief at the same time, then handing their findings to a
-// lead who makes the final call.
 const graph = new StateGraph(ResearchState)
   .addNode("companyAgent", runCompanyAgent)
   .addNode("financialAgent", runFinancialAgent)
@@ -44,7 +28,6 @@ const graph = new StateGraph(ResearchState)
   .addEdge("decisionAgent", END)
   .compile();
 
-// Premium mock state generator to act as a fallback when LLM API keys are rate-limited or exhausted.
 const getMockState = (companyName) => {
   return {
     company: companyName,
@@ -84,7 +67,6 @@ const getMockState = (companyName) => {
   };
 };
 
-// Runs the full pipeline for one company and returns the final state:
 export const runResearch = async (companyName) => {
   try {
     return await graph.invoke({ company: companyName });
@@ -94,8 +76,6 @@ export const runResearch = async (companyName) => {
   }
 };
 
-// Human-readable labels for each node, shown as the 3D avatar's
-// status while that stage is in progress.
 const STAGE_LABELS = {
   companyAgent: "Checking financial performance, market position, and risk",
   decisionAgent: "Preparing investment decision",
@@ -103,9 +83,6 @@ const STAGE_LABELS = {
 
 const PARALLEL_NODES = ["financialAgent", "marketAgent", "riskAgent"];
 
-// Same pipeline as runResearch, but yields progress events as each
-// agent ACTUALLY finishes, instead of returning only the final
-// result.
 export async function* streamResearch(companyName) {
   try {
     const state = { company: companyName };
@@ -139,7 +116,7 @@ export async function* streamResearch(companyName) {
     yield { type: "result", state };
   } catch (error) {
     console.warn(`Graph streaming failed, streaming mock progress: ${error.message}`);
-    // Yield simulated events with small delays to keep frontend Three.js animations working seamlessly!
+    
     yield { type: "progress", stage: "company", label: "Reading company reports" };
     await new Promise((r) => setTimeout(r, 600));
     yield { type: "progress", stage: "parallel", label: STAGE_LABELS.companyAgent };

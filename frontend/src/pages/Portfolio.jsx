@@ -13,7 +13,6 @@ const Portfolio = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [sellHolding, setSellHolding] = useState(null);
 
-  // Form states
   const [company, setCompany] = useState("");
   const [ticker, setTicker] = useState("");
   const [shares, setShares] = useState("");
@@ -77,19 +76,16 @@ const Portfolio = () => {
     });
   };
 
-  // Helper: generates a semi-stable current price for the ticker
-  // using its ticker character codes so it looks realistic and doesn't fluctuate wildly.
   const getCurrentPrice = (tickerStr, buyPrice) => {
     let hash = 0;
     for (let i = 0; i < tickerStr.length; i++) {
       hash += tickerStr.charCodeAt(i);
     }
-    // Variance between -12% and +28% based on the hash
+    
     const variance = ((hash % 40) - 12) / 100;
     return Number((buyPrice * (1 + variance)).toFixed(2));
   };
 
-  // Compute metrics
   const totalCost = portfolio.reduce((acc, item) => acc + item.shares * item.purchasePrice, 0);
   const currentValue = portfolio.reduce((acc, item) => {
     const currentPrice = getCurrentPrice(item.ticker, item.purchasePrice);
@@ -98,7 +94,6 @@ const Portfolio = () => {
   const totalProfitLoss = currentValue - totalCost;
   const profitLossPercentage = totalCost > 0 ? (totalProfitLoss / totalCost) * 100 : 0;
 
-  // Chart Data
   const chartData = portfolio.reduce((acc, item) => {
     const curVal = item.shares * getCurrentPrice(item.ticker, item.purchasePrice);
     const existing = acc.find((x) => x.name === item.ticker);
@@ -110,7 +105,6 @@ const Portfolio = () => {
     return acc;
   }, []);
 
-  // Format values as currency
   const formatCurrency = (val) => {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(val);
   };
@@ -134,7 +128,7 @@ const Portfolio = () => {
 
       {error && <p className="text-caution text-sm mb-4 bg-caution/10 border border-caution/20 rounded-xl px-4 py-3">{error}</p>}
 
-      {/* Summary Cards */}
+      {}
       <div className="grid gap-4 sm:grid-cols-3 mb-8">
         <div className="bg-paper border border-ink/5 rounded-2xl shadow-card p-6 flex items-center justify-between">
           <div>
@@ -198,7 +192,7 @@ const Portfolio = () => {
 
       {!loading && portfolio.length > 0 && (
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Pie Chart Panel */}
+          {}
           <div className="bg-paper border border-ink/5 rounded-2xl shadow-card p-6 flex flex-col items-center">
             <h3 className="font-display font-semibold text-ink self-start mb-4 flex items-center gap-2">
               <ChartIcon className="w-4 h-4 text-gold" />
@@ -227,7 +221,7 @@ const Portfolio = () => {
             </div>
           </div>
 
-          {/* Holdings Grid */}
+          {}
           <div className="lg:col-span-2 bg-paper border border-ink/5 rounded-2xl shadow-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -287,7 +281,7 @@ const Portfolio = () => {
         </div>
       )}
 
-      {/* Add Transaction Modal */}
+      {}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/40 backdrop-blur-sm">
           <div className="w-full max-w-md bg-paper border border-ink/5 rounded-2xl p-6 shadow-card relative">
@@ -366,7 +360,7 @@ const Portfolio = () => {
         </div>
       )}
 
-      {/* Custom Sell Confirmation Modal */}
+      {}
       {sellHolding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/40 backdrop-blur-sm">
           <div className="w-full max-w-sm bg-paper border border-ink/5 rounded-2xl p-6 shadow-card relative">

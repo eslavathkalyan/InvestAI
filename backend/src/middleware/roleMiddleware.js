@@ -1,5 +1,5 @@
-// Usage: router.get("/admin/users", protect, authorize("admin"), ...)
-// Must run after `protect`, since it depends on req.user existing.
+
+
 const authorize = (...allowedRoles) => {
   return (req, res, next) => {
     if (!allowedRoles.includes(req.user.role)) {

@@ -49,7 +49,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    // Load initial notifications for current user
+    
     setNotifications(getNotifications(user?.email));
 
     const handleUpdate = () => {
@@ -100,7 +100,7 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Nav links only collapse at lg - they need more room than search */}
+        {}
         <nav className="hidden lg:flex items-center gap-1.5 shrink-0">
           {user?.role === "admin" ? (
             <NavLink to="/admin" className={navLinkClasses}>
@@ -114,7 +114,7 @@ const Navbar = () => {
                 </NavLink>
               ))}
 
-              {/* More Dropdown */}
+              {}
               <div
                 className="relative"
                 onMouseEnter={() => setMoreOpen(true)}

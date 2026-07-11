@@ -88,9 +88,9 @@ const MarketInsights = () => {
 
       {!loading && insights && (
         <div className="space-y-6">
-          {/* Top Row: Sentiment & Summary */}
+          {}
           <div className="grid gap-6 md:grid-cols-3">
-            {/* Sentiment Gauge */}
+            {}
             <div className="bg-paper border border-ink/5 rounded-2xl p-6 shadow-card flex flex-col justify-between">
               <div>
                 <span className="text-xxs font-bold uppercase tracking-wider text-ink/40">Market Pulse</span>
@@ -103,7 +103,7 @@ const MarketInsights = () => {
               <div className="mt-8 flex flex-col items-center justify-center relative">
                 <span className="font-display text-5xl font-extrabold text-navy">{insights.sentimentScore}</span>
                 <span className="text-[10px] font-bold text-ink/35 mt-1 uppercase tracking-wider">Sentiment Score</span>
-                {/* Score bar */}
+                {}
                 <div className="w-full bg-cream h-2.5 rounded-full overflow-hidden mt-5">
                   <div
                     className={`h-full transition-all duration-1000 ${
@@ -119,7 +119,7 @@ const MarketInsights = () => {
               </div>
             </div>
 
-            {/* AI Summary Card */}
+            {}
             <div className="md:col-span-2 bg-paper border border-ink/5 rounded-2xl p-6 shadow-card flex flex-col justify-between">
               <div>
                 <h3 className="font-display font-semibold text-ink flex items-center gap-2">
@@ -141,9 +141,9 @@ const MarketInsights = () => {
             </div>
           </div>
 
-          {/* Drivers Section */}
+          {}
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Bullish Drivers */}
+            {}
             <div className="bg-paper border border-ink/5 rounded-2xl p-6 shadow-card">
               <h4 className="font-display font-semibold text-positive flex items-center gap-1.5 mb-4">
                 <CheckCircle className="w-4.5 h-4.5" />
@@ -159,7 +159,7 @@ const MarketInsights = () => {
               </ul>
             </div>
 
-            {/* Bearish Drivers */}
+            {}
             <div className="bg-paper border border-ink/5 rounded-2xl p-6 shadow-card">
               <h4 className="font-display font-semibold text-caution flex items-center gap-1.5 mb-4">
                 <AlertCircle className="w-4.5 h-4.5" />
@@ -176,7 +176,7 @@ const MarketInsights = () => {
             </div>
           </div>
 
-          {/* Sector Allocation Breakdown */}
+          {}
           <div className="bg-paper border border-ink/5 rounded-2xl shadow-card overflow-hidden">
             <div className="p-6 border-b border-ink/5">
               <h3 className="font-display font-semibold text-ink flex items-center gap-2">

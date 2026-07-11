@@ -35,9 +35,9 @@ const Home = () => {
 
   return (
     <div>
-      {/* Hero Section with Network Plexus Background Video */}
+      {}
       <section className="relative overflow-hidden border-b border-ink/5 bg-paper/50 min-h-[80vh] flex items-center">
-        {/* Responsive 3D Spline Canvas Background */}
+        {}
         <SplineModel />
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-20 w-full pointer-events-none">
@@ -72,7 +72,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features */}
+      {}
       <section className="bg-paper border-y border-ink/5">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {FEATURES.map(({ icon: Icon, title, description }) => (

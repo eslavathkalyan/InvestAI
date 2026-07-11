@@ -7,7 +7,6 @@ const Settings = () => {
   const { user, login } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Profile Form States
   const [name, setName] = useState(user?.name || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -15,7 +14,6 @@ const Settings = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Preference States
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [confidenceThreshold, setConfidenceThreshold] = useState(70);
 
@@ -36,12 +34,11 @@ const Settings = () => {
         ...(password ? { password } : {}),
       });
 
-      // Update auth context state by reloading or using token
       if (res.data?.user) {
         const token = localStorage.getItem("token");
-        // re-save same token to trigger context sync or manually update user
+        
         localStorage.setItem("user", JSON.stringify(res.data.user));
-        // Force reload page to sync authentication context cleanly
+        
         setSuccess("Profile updated successfully!");
         setPassword("");
         setConfirmPassword("");
@@ -76,7 +73,7 @@ const Settings = () => {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Navigation Sidebar */}
+        {}
         <aside className="w-full md:w-64 shrink-0">
           <nav className="flex md:flex-col gap-1 overflow-x-auto pb-3 md:pb-0">
             <button
@@ -115,7 +112,7 @@ const Settings = () => {
           </nav>
         </aside>
 
-        {/* Content Panel */}
+        {}
         <main className="flex-1 bg-paper border border-ink/5 rounded-2xl p-6 sm:p-8 shadow-card">
           {success && (
             <div className="mb-6 flex items-center gap-2.5 text-sm text-positive bg-positive/10 border border-positive/20 rounded-xl px-4 py-3">
@@ -294,7 +291,7 @@ const Settings = () => {
 
               <div className="bg-cream/40 border border-ink/5 rounded-xl p-4 text-xs text-ink/60">
                 <h4 className="font-semibold mb-1 text-navy">Deployment Note</h4>
-                These keys and settings are loaded from the backend environment variables (`.env`). To override provider configs globally, modify files in [backend/.env](file:///c:/Users/eslav/Downloads/investai-project/investai/backend/.env).
+                These keys and settings are loaded from the backend environment variables (`.env`). To override provider configs globally, modify files in [backend/.env](file:
               </div>
             </div>
           )}

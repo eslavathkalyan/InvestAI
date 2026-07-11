@@ -1,13 +1,11 @@
 import User from "../models/User.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-// GET /api/user/watchlist
 export const getWatchlist = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   res.status(200).json(user.watchlist || []);
 });
 
-// POST /api/user/watchlist
 export const addToWatchlist = asyncHandler(async (req, res) => {
   const { company } = req.body;
   if (!company || !company.trim()) {
@@ -25,7 +23,6 @@ export const addToWatchlist = asyncHandler(async (req, res) => {
   res.status(200).json(user.watchlist);
 });
 
-// DELETE /api/user/watchlist/:company
 export const removeFromWatchlist = asyncHandler(async (req, res) => {
   const { company } = req.params;
   const user = await User.findById(req.user._id);
@@ -38,7 +35,6 @@ export const removeFromWatchlist = asyncHandler(async (req, res) => {
   res.status(200).json(user.watchlist);
 });
 
-// PUT /api/user/profile
 export const updateProfile = asyncHandler(async (req, res) => {
   const { name, password } = req.body;
   const user = await User.findById(req.user._id);
@@ -67,13 +63,11 @@ export const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /api/user/wallet
 export const getWalletBalance = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   res.status(200).json({ balance: user.walletBalance || 0 });
 });
 
-// POST /api/user/wallet
 export const addWalletBalance = asyncHandler(async (req, res) => {
   const { amount } = req.body;
   if (!amount || isNaN(amount) || Number(amount) <= 0) {
@@ -90,7 +84,6 @@ export const addWalletBalance = asyncHandler(async (req, res) => {
   });
 });
 
-// POST /api/user/wallet/withdraw
 export const withdrawWalletBalance = asyncHandler(async (req, res) => {
   const { amount, bankAccount, ifsc } = req.body;
   if (!amount || isNaN(amount) || Number(amount) <= 0) {

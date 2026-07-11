@@ -32,11 +32,10 @@ const Research = () => {
   const [inputValue, setInputValue] = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
 
-  // Direct Investment States
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
   const [sharesInput, setSharesInput] = useState("10");
-  const [investPrice] = useState(150); // mock stock price
+  const [investPrice] = useState(150); 
   const [investLoading, setInvestLoading] = useState(false);
   const [investError, setInvestError] = useState("");
   const [investSuccess, setInvestSuccess] = useState("");
@@ -116,7 +115,7 @@ const Research = () => {
     }
 
     if (!company) {
-      // Reset state if we navigate to clean /research
+      
       setStage("idle");
       setReport(null);
       setCompletedSubsteps([]);
@@ -124,8 +123,6 @@ const Research = () => {
       return;
     }
 
-    // Reset for a fresh run, in case the user searches a different
-    // company from this same page without a full reload.
     setStage("company");
     setLabel("Reading company reports");
     setCompletedSubsteps([]);
@@ -202,7 +199,6 @@ const Research = () => {
     );
   }
 
-  // No company yet and no report ID - a simple prompt instead of an empty 3D room.
   if (!company && !reportId) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 text-center">
@@ -286,9 +282,7 @@ const Research = () => {
             <ResearchRoom stage={stage} label={label} />
           </div>
 
-          {/* Real per-agent progress, not decoration: each dot only
-              lights up once that agent's chunk has actually arrived
-              from the backend (see streamResearch in researchGraph.js). */}
+          {}
           <div className="flex items-center justify-center gap-6">
             {Object.entries(SUBSTEP_LABELS).map(([node, name]) => (
               <div key={node} className="flex items-center gap-1.5 text-xs">
@@ -318,7 +312,7 @@ const Research = () => {
         </div>
       )}
 
-      {/* Invest Modal */}
+      {}
       {showInvestModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/40 backdrop-blur-xs">
           <div className="w-full max-w-md bg-paper border border-ink/5 rounded-2xl p-6 shadow-card relative">

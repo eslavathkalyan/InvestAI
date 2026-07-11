@@ -19,7 +19,6 @@ const marketInsightsSchema = z.object({
   trendingKeywords: z.array(z.string()).describe("Top 5 trending financial keywords or topics"),
 });
 
-// A premium fallback in case the LLM call times out or encounters rate limits
 const fallbackInsights = {
   summary: "Global equity markets show resilient performance as tech stock momentum offsets concerns regarding the central bank's persistent higher-for-longer interest rate path. Investors are heavily focused on upcoming corporate earnings reports and key inflation indexes to gauge the future rate cut timeline.",
   sentiment: "BULLISH",
@@ -69,7 +68,6 @@ const fallbackInsights = {
   trendingKeywords: ["AI Capital Expenditures", "Federal Reserve Dot Plot", "Core PCE Inflation", "Semi-conductor Supply", "Yield Curve Steepening"],
 };
 
-// GET /api/insights
 export const getMarketInsights = asyncHandler(async (req, res) => {
   try {
     const llm = getLLM().withStructuredOutput(marketInsightsSchema, {

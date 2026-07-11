@@ -20,9 +20,7 @@ const Register = () => {
 
     try {
       await registerUser(form);
-      // The backend won't let this user log in until they click the
-      // verification link it just emailed them, so there's no token
-      // to store yet - just confirm the email was sent.
+
       setRegistered(true);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong. Please try again.");

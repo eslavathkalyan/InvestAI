@@ -8,7 +8,6 @@ const CompanyScreener = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSector, setSelectedSector] = useState("All");
   const [maxPE, setMaxPE] = useState(100);
@@ -22,7 +21,6 @@ const CompanyScreener = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Filter logic
   const filteredCompanies = companies.filter((item) => {
     const matchSearch =
       item.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,14 +51,14 @@ const CompanyScreener = () => {
 
       {!loading && !error && (
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Filters Sidebar */}
+          {}
           <aside className="w-full lg:w-72 shrink-0 bg-paper border border-ink/5 rounded-2xl p-6 shadow-card h-fit space-y-6">
             <h3 className="font-display font-semibold text-ink flex items-center gap-2 border-b border-ink/5 pb-3">
               <Filter className="w-4.5 h-4.5 text-gold" />
               Screener Filters
             </h3>
 
-            {/* Text Search */}
+            {}
             <div>
               <label className="block text-xs font-semibold text-ink/70 mb-2">Search Stock</label>
               <div className="relative">
@@ -75,7 +73,7 @@ const CompanyScreener = () => {
               </div>
             </div>
 
-            {/* Sector Selector */}
+            {}
             <div>
               <label className="block text-xs font-semibold text-ink/70 mb-1.5">Sector</label>
               <select
@@ -91,7 +89,7 @@ const CompanyScreener = () => {
               </select>
             </div>
 
-            {/* PE Ratio Range */}
+            {}
             <div>
               <div className="flex justify-between text-xs font-semibold text-ink/70 mb-1">
                 <span>Maximum P/E Ratio</span>
@@ -108,7 +106,7 @@ const CompanyScreener = () => {
               />
             </div>
 
-            {/* Market Cap Slider */}
+            {}
             <div>
               <div className="flex justify-between text-xs font-semibold text-ink/70 mb-1">
                 <span>Min Market Cap</span>
@@ -125,7 +123,7 @@ const CompanyScreener = () => {
               />
             </div>
 
-            {/* Dividend Toggle */}
+            {}
             <div className="flex items-center gap-2 pt-2 border-t border-ink/5">
               <input
                 type="checkbox"
@@ -140,7 +138,7 @@ const CompanyScreener = () => {
             </div>
           </aside>
 
-          {/* Results Grid/Table */}
+          {}
           <main className="flex-1 bg-paper border border-ink/5 rounded-2xl shadow-card overflow-hidden">
             {filteredCompanies.length === 0 ? (
               <div className="p-12 text-center text-ink/40">

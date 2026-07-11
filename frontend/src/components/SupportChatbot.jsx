@@ -56,7 +56,6 @@ const SupportChatbot = () => {
   const handleSendMessage = (textToSend) => {
     if (!textToSend.trim()) return;
 
-    // Add user message
     const userMsg = {
       id: Date.now(),
       sender: "user",
@@ -68,7 +67,6 @@ const SupportChatbot = () => {
     setInputText("");
     setIsTyping(true);
 
-    // Process reply after delay
     setTimeout(() => {
       let matchedReply = "";
       const lowerText = textToSend.toLowerCase();
@@ -102,10 +100,10 @@ const SupportChatbot = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      {/* Chat Window Panel */}
+      {}
       {isOpen && (
         <div className="w-80 sm:w-96 h-[480px] bg-paper border border-ink/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 transition duration-300">
-          {/* Header */}
+          {}
           <div className="bg-navy p-4 flex items-center justify-between text-white border-b border-white/5">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
@@ -127,7 +125,7 @@ const SupportChatbot = () => {
             </button>
           </div>
 
-          {/* Messages list */}
+          {}
           <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-cream/15">
             {messages.map((msg) => (
               <div
@@ -172,7 +170,7 @@ const SupportChatbot = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick suggestions chips */}
+          {}
           <div className="px-4 py-2 bg-cream/10 border-t border-ink/5 flex gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
             <button
               onClick={() => handleQuickQuestion("How to deposit money?")}
@@ -200,7 +198,7 @@ const SupportChatbot = () => {
             </button>
           </div>
 
-          {/* Chat Form */}
+          {}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -226,7 +224,7 @@ const SupportChatbot = () => {
         </div>
       )}
 
-      {/* Floating Toggle Button */}
+      {}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-14 h-14 rounded-full bg-navy text-white flex items-center justify-center hover:bg-navy/90 hover:scale-105 shadow-2xl transition cursor-pointer relative group"

@@ -2,13 +2,11 @@ import PortfolioItem from "../models/PortfolioItem.js";
 import User from "../models/User.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-// GET /api/portfolio
 export const getPortfolio = asyncHandler(async (req, res) => {
   const items = await PortfolioItem.find({ userId: req.user._id }).sort({ purchaseDate: -1 });
   res.status(200).json(items);
 });
 
-// POST /api/portfolio
 export const addPortfolioItem = asyncHandler(async (req, res) => {
   const { company, ticker, shares, purchasePrice, purchaseDate, deductFromWallet } = req.body;
 

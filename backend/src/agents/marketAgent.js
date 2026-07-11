@@ -9,9 +9,6 @@ const marketSchema = z.object({
     .describe("How this company is positioned relative to its competitors"),
 });
 
-// Runs in parallel with financialAgent and riskAgent (see
-// researchGraph.js) since none of the three depend on each other's
-// output -- they all just need the company overview.
 const runMarketAgent = async (state) => {
   const llm = getLLM().withStructuredOutput(marketSchema, {
     name: "MarketAnalysis",

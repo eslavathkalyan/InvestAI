@@ -19,12 +19,8 @@ const financialSchema = z.object({
     .describe("Whether this analysis used real market data or the model's own estimate"),
 });
 
-// Tries to get real fundamentals from Alpha Vantage. Returns null on
-// ANY failure -- missing API key, company not found, or the free
-// tier's daily limit reached -- so the caller can fall back cleanly
-// instead of the whole research run crashing over one flaky lookup.
 const getRealFinancialData = async (companyName) => {
-  // Always return null to bypass Alpha Vantage and use 100% free LLM estimates
+  
   return null;
 };
 
@@ -35,10 +31,6 @@ const runFinancialAgent = async (state) => {
     name: "FinancialAnalysis",
   });
 
-  // We tell the model directly whether real numbers exist, and
-  // instruct it to be honest in the dataSource field rather than
-  // inferring it, since the model has no other way to know why the
-  // lookup did or didn't happen.
   const context = realData
     ? `Real financial data from Alpha Vantage:\n${JSON.stringify(
         {

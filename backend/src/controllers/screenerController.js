@@ -16,13 +16,11 @@ const SCREENER_COMPANIES = [
   { company: "Visa", ticker: "V", sector: "Financials", marketCap: 520, peRatio: 30.2, dividendYield: 0.8, dayChange: 0.5 }
 ];
 
-// GET /api/screener
 export const getScreenerCompanies = asyncHandler(async (req, res) => {
   const reports = await ResearchReport.find({ userId: req.user._id }).sort({ createdAt: -1 });
 
-  // Map each company in our screener to its latest user report (if any)
   const companiesWithStatus = SCREENER_COMPANIES.map((item) => {
-    // Find latest report matching the company name or ticker
+    
     const match = reports.find(
       (r) =>
         r.company.toLowerCase() === item.company.toLowerCase() ||

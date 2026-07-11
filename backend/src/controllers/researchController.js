@@ -3,10 +3,6 @@ import { runResearch, streamResearch } from "../agents/researchGraph.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { validateStockMarketPresence } from "../utils/stockValidator.js";
 
-// Both createResearch and streamResearchHandler end up with the same
-// shape of finished state (from runResearch, or from accumulating
-// streamResearch's chunks) and need to save it the same way. Pulled
-// out once here instead of duplicating this field mapping twice.
 const saveReportFromState = (userId, state) => {
   let ticker = state.company.trim().toUpperCase();
   if (ticker.length > 5 || ticker.includes(" ")) {
@@ -38,11 +34,6 @@ const saveReportFromState = (userId, state) => {
   });
 };
 
-// POST /api/research
-// Runs the full 5-agent pipeline for a company and saves the result
-// against the logged-in user, so it shows up in their history. Used
-// by anything that just wants the final answer, with no interest in
-// live progress.
 const createResearch = asyncHandler(async (req, res) => {
   const { company } = req.body;
 
@@ -61,19 +52,6 @@ const createResearch = asyncHandler(async (req, res) => {
   res.status(201).json(report);
 });
 
-// GET /api/research/stream?company=Tesla
-// Same pipeline, but streamed as Server-Sent Events so the 3D
-// research page can show real progress instead of a fake timer.
-//
-// Note: this deliberately is NOT consumed with the browser's native
-// EventSource on the frontend, because EventSource can't send a
-// custom Authorization header, and every other request in this app
-// authenticates that way. The frontend instead reads this response
-// manually via fetch() + a stream reader, which does support the
-// header - see frontend/src/api/streamResearch.js. Because of that,
-// this route needs no special auth handling: `protect` (applied to
-// the whole router below) works exactly like it does for any other
-// route here.
 const streamResearchHandler = asyncHandler(async (req, res) => {
   const company = req.query.company?.trim();
 
@@ -116,8 +94,6 @@ const streamResearchHandler = asyncHandler(async (req, res) => {
   }
 });
 
-// GET /api/research
-// The logged-in user's saved reports, most recent first.
 const getMyReports = asyncHandler(async (req, res) => {
   const reports = await ResearchReport.find({ userId: req.user._id }).sort({
     createdAt: -1,
@@ -126,8 +102,6 @@ const getMyReports = asyncHandler(async (req, res) => {
   res.status(200).json(reports);
 });
 
-// GET /api/research/:id
-// A single report. Scoped to userId OR public if isShared is true.
 const getReportById = asyncHandler(async (req, res) => {
   const report = await ResearchReport.findById(req.params.id);
 
@@ -135,7 +109,6 @@ const getReportById = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Report not found" });
   }
 
-  // Allow viewing if the report belongs to the user OR if it is shared with the community OR if the user is an admin
   if (
     report.userId.toString() !== req.user._id.toString() &&
     !report.isShared &&
@@ -147,8 +120,6 @@ const getReportById = asyncHandler(async (req, res) => {
   res.status(200).json(report);
 });
 
-// PUT /api/research/:id/share
-// Toggles whether a research report is shared publicly in the community feed.
 const shareReport = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { isShared } = req.body;
@@ -166,8 +137,6 @@ const shareReport = asyncHandler(async (req, res) => {
   res.status(200).json(report);
 });
 
-// GET /api/research/community/shared
-// Retrieve all public reports from the community feed.
 const getSharedReports = asyncHandler(async (req, res) => {
   const reports = await ResearchReport.find({ isShared: true })
     .populate("userId", "name")

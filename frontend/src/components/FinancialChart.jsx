@@ -2,17 +2,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const RISK_TO_SCORE = { LOW: 25, MEDIUM: 60, HIGH: 90 };
 
-// The brief calls for a "revenue trend" chart, but the Financial
-// Agent doesn't produce real historical revenue data - Alpha
-// Vantage's free OVERVIEW endpoint is a snapshot, not a multi-year
-// time series (see financialAgent.js), and fabricating a fake trend
-// line would misrepresent AI-estimated data as verified fact.
-//
-// This chart instead plots the real numeric values the pipeline
-// actually produces: the Financial Agent's own growthScore, a
-// mapped version of the Risk Agent's LOW/MEDIUM/HIGH rating, and the
-// Decision Agent's confidence. All three are genuine model output,
-// just visualized instead of only being read as text.
 const FinancialChart = ({ financial, risk, confidence }) => {
   const data = [
     { name: "Growth", value: financial?.growthScore ?? 0, color: "var(--color-navy)" },
