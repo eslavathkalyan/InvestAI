@@ -7,7 +7,12 @@ const generateHexId = () => {
 
 class PortfolioItemInstance {
   constructor(row) {
-    this._id = row._id;
+    const rawId = row._id;
+    this._id = {
+      toString: () => rawId,
+      equals: (other) => rawId === (other ? other.toString() : null)
+    };
+    
     this.userId = row.user_id;
     this.company = row.company;
     this.ticker = row.ticker;
@@ -35,8 +40,8 @@ class PortfolioItemInstance {
     `;
 
     const res = await pgQuery(q, [
-      this._id,
-      this.userId,
+      this._id.toString(),
+      this.userId ? this.userId.toString() : null,
       this.company,
       this.ticker,
       this.shares,
@@ -72,19 +77,20 @@ const PortfolioItem = {
     return new PortfolioItemInstance(res.rows[0]);
   },
 
-  async find(queryObj = {}) {
+  find(queryObj = {}) {
     let sql = "SELECT * FROM portfolio_items WHERE 1=1";
     const params = [];
     let idx = 1;
 
     for (const [key, val] of Object.entries(queryObj)) {
-      if (key === "userId") {
-        sql += ` AND user_id = $${idx}`;
-        params.push(val.toString());
+      const colName = key === "userId" ? "user_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
       } else {
-        const colName = key.replace(/([A-Z])/g, "_$1").toLowerCase();
         sql += ` AND ${colName} = $${idx}`;
-        params.push(val);
+        params.push(val ? val.toString() : val);
       }
       idx++;
     }
@@ -101,16 +107,21 @@ const PortfolioItem = {
         }
         return chain;
       },
-      then: async (onfulfilled) => {
-        let finalSql = `${sql} ORDER BY ${sortCol} ${sortDir}`;
-        const res = await pgQuery(finalSql, params);
-        const instances = res.rows.map(row => new PortfolioItemInstance(row));
-        return onfulfilled ? onfulfilled(instances) : instances;
+      then: async (resolve, reject) => {
+        try {
+          let finalSql = `${sql} ORDER BY ${sortCol} ${sortDir}`;
+          const res = await pgQuery(finalSql, params);
+          const instances = res.rows.map(row => new PortfolioItemInstance(row));
+          return resolve(instances);
+        } catch (err) {
+          if (reject) return reject(err);
+          resolve([]);
+        }
+      },
+      catch: (onrejected) => {
+        return chain.then(null, onrejected);
       }
     };
-
-    // Make chain promise-like
-    chain.catch = (onrejected) => chain.then().catch(onrejected);
 
     return chain;
   },
@@ -121,16 +132,14 @@ const PortfolioItem = {
     let idx = 1;
 
     for (const [key, val] of Object.entries(queryObj)) {
-      if (key === "_id") {
-        sql += ` AND _id = $${idx}`;
-        params.push(val.toString());
-      } else if (key === "userId") {
-        sql += ` AND user_id = $${idx}`;
-        params.push(val.toString());
+      const colName = key === "userId" ? "user_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
       } else {
-        const colName = key.replace(/([A-Z])/g, "_$1").toLowerCase();
         sql += ` AND ${colName} = $${idx}`;
-        params.push(val);
+        params.push(val ? val.toString() : val);
       }
       idx++;
     }

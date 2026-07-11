@@ -7,7 +7,12 @@ const generateHexId = () => {
 
 class ResearchReportInstance {
   constructor(row) {
-    this._id = row._id;
+    const rawId = row._id;
+    this._id = {
+      toString: () => rawId,
+      equals: (other) => rawId === (other ? other.toString() : null)
+    };
+    
     this.userId = row.user_id;
     this.company = row.company;
     this.ticker = row.ticker;
@@ -61,8 +66,8 @@ class ResearchReportInstance {
     `;
 
     const res = await pgQuery(q, [
-      this._id,
-      this.userId,
+      this._id.toString(),
+      this.userId ? this.userId.toString() : null,
       this.company,
       this.ticker,
       this.decision,
@@ -106,22 +111,20 @@ const ResearchReport = {
     return new ResearchReportInstance(res.rows[0]);
   },
 
-  async find(queryObj = {}) {
+  find(queryObj = {}) {
     let sql = "SELECT * FROM reports WHERE 1=1";
     const params = [];
     let idx = 1;
 
     for (const [key, val] of Object.entries(queryObj)) {
-      if (key === "userId") {
-        sql += ` AND user_id = $${idx}`;
-        params.push(val.toString());
-      } else if (key === "isShared") {
-        sql += ` AND is_shared = $${idx}`;
-        params.push(val);
+      const colName = key === "userId" ? "user_id" : key === "isShared" ? "is_shared" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
       } else {
-        const colName = key.replace(/([A-Z])/g, "_$1").toLowerCase();
         sql += ` AND ${colName} = $${idx}`;
-        params.push(val);
+        params.push(val ? val.toString() : val);
       }
       idx++;
     }
@@ -145,34 +148,39 @@ const ResearchReport = {
         }
         return chain;
       },
-      then: async (onfulfilled) => {
-        let finalSql = `${sql} ORDER BY ${sortCol} ${sortDir}`;
-        const res = await pgQuery(finalSql, params);
-        const instances = res.rows.map(row => new ResearchReportInstance(row));
+      then: async (resolve, reject) => {
+        try {
+          let finalSql = `${sql} ORDER BY ${sortCol} ${sortDir}`;
+          const res = await pgQuery(finalSql, params);
+          const instances = res.rows.map(row => new ResearchReportInstance(row));
 
-        if (populateUser && instances.length > 0) {
-          // Fetch users in bulk
-          const userIds = [...new Set(instances.map(inst => inst.userId))];
-          if (userIds.length > 0) {
-            const userSql = `SELECT _id, name, email FROM users WHERE _id = ANY($1)`;
-            const userRes = await pgQuery(userSql, [userIds]);
-            const userMap = {};
-            userRes.rows.forEach(u => {
-              userMap[u._id] = { _id: u._id, name: u.name, email: u.email };
-            });
+          if (populateUser && instances.length > 0) {
+            // Fetch users in bulk
+            const userIds = [...new Set(instances.map(inst => inst.userId))];
+            if (userIds.length > 0) {
+              const userSql = `SELECT _id, name, email FROM users WHERE _id = ANY($1)`;
+              const userRes = await pgQuery(userSql, [userIds]);
+              const userMap = {};
+              userRes.rows.forEach(u => {
+                userMap[u._id] = { _id: u._id, name: u.name, email: u.email };
+              });
 
-            instances.forEach(inst => {
-              inst.userId = userMap[inst.userId] || { _id: inst.userId, name: "Unknown User" };
-            });
+              instances.forEach(inst => {
+                inst.userId = userMap[inst.userId] || { _id: inst.userId, name: "Unknown User" };
+              });
+            }
           }
-        }
 
-        return onfulfilled ? onfulfilled(instances) : instances;
+          return resolve(instances);
+        } catch (err) {
+          if (reject) return reject(err);
+          resolve([]);
+        }
+      },
+      catch: (onrejected) => {
+        return chain.then(null, onrejected);
       }
     };
-
-    // Make chain promise-like
-    chain.catch = (onrejected) => chain.then().catch(onrejected);
 
     return chain;
   },
@@ -190,16 +198,14 @@ const ResearchReport = {
     let idx = 1;
 
     for (const [key, val] of Object.entries(filter)) {
-      if (key === "_id") {
-        sql += ` AND _id = $${idx}`;
-        params.push(val.toString());
-      } else if (key === "userId") {
-        sql += ` AND user_id = $${idx}`;
-        params.push(val.toString());
+      const colName = key === "userId" ? "user_id" : key === "isShared" ? "is_shared" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
       } else {
-        const colName = key.replace(/([A-Z])/g, "_$1").toLowerCase();
         sql += ` AND ${colName} = $${idx}`;
-        params.push(val);
+        params.push(val ? val.toString() : val);
       }
       idx++;
     }
@@ -223,14 +229,25 @@ const ResearchReport = {
     let idx = 1;
 
     for (const [key, val] of Object.entries(filter)) {
-      const colName = key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      sql += ` AND ${colName} = $${idx}`;
-      params.push(val);
+      const colName = key === "userId" ? "user_id" : key === "isShared" ? "is_shared" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
+      } else {
+        sql += ` AND ${colName} = $${idx}`;
+        params.push(val ? val.toString() : val);
+      }
       idx++;
     }
 
-    const res = await pgQuery(sql, params);
-    return Number(res.rows[0].count);
+    try {
+      const res = await pgQuery(sql, params);
+      return Number(res.rows[0].count);
+    } catch (err) {
+      console.error("ResearchReport.countDocuments Error:", err.message);
+      return 0;
+    }
   },
 
   async deleteMany(filter = {}) {
@@ -239,13 +256,14 @@ const ResearchReport = {
     let idx = 1;
 
     for (const [key, val] of Object.entries(filter)) {
-      if (key === "userId") {
-        sql += ` AND user_id = $${idx}`;
-        params.push(val.toString());
+      const colName = key === "userId" ? "user_id" : key === "isShared" ? "is_shared" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
       } else {
-        const colName = key.replace(/([A-Z])/g, "_$1").toLowerCase();
         sql += ` AND ${colName} = $${idx}`;
-        params.push(val);
+        params.push(val ? val.toString() : val);
       }
       idx++;
     }

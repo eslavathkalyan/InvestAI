@@ -9,7 +9,13 @@ const generateHexId = () => {
 
 class UserInstance {
   constructor(row) {
-    this._id = row._id;
+    // Support MongoDB ObjectId comparison semantics (user._id.equals(otherId))
+    const rawId = row._id;
+    this._id = {
+      toString: () => rawId,
+      equals: (other) => rawId === (other ? other.toString() : null)
+    };
+
     this.name = row.name;
     this.email = row.email;
     this.password = row.password;
@@ -69,7 +75,7 @@ class UserInstance {
     `;
 
     const res = await pgQuery(q, [
-      this._id,
+      this._id.toString(),
       this.name,
       this.email,
       this.password,
@@ -136,6 +142,8 @@ const User = {
           let idx = 1;
 
           for (const [key, val] of Object.entries(queryObj)) {
+            const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+            
             if (key === "email") {
               sql += ` AND LOWER(email) = LOWER($${idx})`;
               params.push(val);
@@ -153,9 +161,13 @@ const User = {
                 params.push(val);
               }
             } else {
-              const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
-              sql += ` AND ${colName} = $${idx}`;
-              params.push(val);
+              if (val && typeof val === "object" && val.$ne !== undefined) {
+                sql += ` AND ${colName} != $${idx}`;
+                params.push(val.$ne.toString());
+              } else {
+                sql += ` AND ${colName} = $${idx}`;
+                params.push(val ? val.toString() : val);
+              }
             }
             idx++;
           }
@@ -190,18 +202,14 @@ const User = {
     let idx = 1;
 
     for (const [key, val] of Object.entries(queryObj)) {
-      if (key === "_id") {
-        if (val && typeof val === "object" && val.$ne) {
-          sql += ` AND _id != $${idx}`;
-          params.push(val.$ne.toString());
-        } else {
-          sql += ` AND _id = $${idx}`;
-          params.push(val.toString());
-        }
+      const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
       } else {
-        const colName = key.replace(/([A-Z])/g, "_$1").toLowerCase();
         sql += ` AND ${colName} = $${idx}`;
-        params.push(val);
+        params.push(val ? val.toString() : val);
       }
       idx++;
     }
@@ -226,6 +234,33 @@ const User = {
     };
 
     return chain;
+  },
+
+  async countDocuments(filter = {}) {
+    let sql = "SELECT COUNT(*) FROM users WHERE 1=1";
+    const params = [];
+    let idx = 1;
+
+    for (const [key, val] of Object.entries(filter)) {
+      const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
+      } else {
+        sql += ` AND ${colName} = $${idx}`;
+        params.push(val ? val.toString() : val);
+      }
+      idx++;
+    }
+
+    try {
+      const res = await pgQuery(sql, params);
+      return Number(res.rows[0].count);
+    } catch (err) {
+      console.error("User.countDocuments Error:", err.message);
+      return 0;
+    }
   },
 
   async create(data) {
@@ -289,8 +324,13 @@ const User = {
 
     for (const [key, val] of Object.entries(filter)) {
       const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      sql += ` AND ${colName} = $${idx}`;
-      params.push(val);
+      if (val && typeof val === "object" && val.$ne !== undefined) {
+        sql += ` AND ${colName} != $${idx}`;
+        params.push(val.$ne.toString());
+      } else {
+        sql += ` AND ${colName} = $${idx}`;
+        params.push(val ? val.toString() : val);
+      }
       idx++;
     }
 
