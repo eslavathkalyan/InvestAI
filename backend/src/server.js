@@ -10,7 +10,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import connectDB from "./config/database.js";
-import { initPostgres } from "./config/postgres.js";
 import authRoutes from "./routes/authRoutes.js";
 import researchRoutes from "./routes/researchRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -23,7 +22,6 @@ import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
 const startServer = async () => {
   await connectDB();
-  await initPostgres();
 
   const app = express();
 

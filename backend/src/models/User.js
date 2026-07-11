@@ -1,125 +1,298 @@
-import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { query as pgQuery } from "../config/database.js";
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, "Name is required"],
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: [true, "Email is required"],
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    password: {
-      type: String,
-      required: [true, "Password is required"],
-      minlength: 6,
-      select: false, 
-    },
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-
-    isApproved: {
-      type: Boolean,
-      default: false,
-    },
-    isBlocked: {
-      type: Boolean,
-      default: false,
-    },
-    walletBalance: {
-      type: Number,
-      default: 0,
-    },
-    verificationToken: String,
-    verificationTokenExpire: Date,
-    resetPasswordToken: String,
-    resetPasswordExpire: Date,
-    watchlist: {
-      type: [String],
-      default: [],
-    },
-  },
-  { timestamps: true } 
-);
-
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
-
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+// Helper to generate a Mongo-like hex ID for Postgres rows if not provided
+const generateHexId = () => {
+  return crypto.randomBytes(12).toString("hex");
 };
 
-userSchema.methods.generateVerificationToken = function () {
-  const plainToken = crypto.randomBytes(32).toString("hex");
+class UserInstance {
+  constructor(row) {
+    this._id = row._id;
+    this.name = row.name;
+    this.email = row.email;
+    this.password = row.password;
+    this.role = row.role;
+    this.isVerified = row.is_verified;
+    this.isApproved = row.is_approved;
+    this.isBlocked = row.is_blocked;
+    this.walletBalance = Number(row.wallet_balance || 0);
+    this.verificationToken = row.verification_token;
+    this.verificationTokenExpire = row.verification_token_expire;
+    this.resetPasswordToken = row.reset_password_token;
+    this.resetPasswordExpire = row.reset_password_expire;
+    
+    // Parse watchlist
+    try {
+      this.watchlist = typeof row.watchlist === "string" ? JSON.parse(row.watchlist) : (row.watchlist || []);
+    } catch (e) {
+      this.watchlist = [];
+    }
 
-  this.verificationToken = crypto
-    .createHash("sha256")
-    .update(plainToken)
-    .digest("hex");
-
-  this.verificationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; 
-
-  return plainToken;
-};
-
-userSchema.methods.generateResetPasswordToken = function () {
-  const plainToken = crypto.randomBytes(32).toString("hex");
-
-  this.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(plainToken)
-    .digest("hex");
-
-  this.resetPasswordExpire = Date.now() + 60 * 60 * 1000; 
-
-  return plainToken;
-};
-
-userSchema.post("save", async function (doc) {
-  try {
-    const { query: pgQuery } = await import("../config/postgres.js");
-    await pgQuery(
-      `INSERT INTO users (id, name, email, role, is_approved, is_verified) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       ON CONFLICT (id) DO UPDATE SET 
-       name = EXCLUDED.name, 
-       email = EXCLUDED.email, 
-       role = EXCLUDED.role, 
-       is_approved = EXCLUDED.is_approved, 
-       is_verified = EXCLUDED.is_verified`,
-      [
-        doc._id.toString(),
-        doc.name,
-        doc.email,
-        doc.role,
-        doc.isApproved || false,
-        doc.isVerified || false
-      ]
-    );
-  } catch (err) {
-    console.error("🐘 PostgreSQL user sync error:", err.message);
+    this.createdAt = row.created_at;
+    this.updatedAt = row.updated_at;
+    
+    // Track if password changed
+    this._originalPassword = row.password;
   }
-});
 
-const User = mongoose.model("User", userSchema);
+  async save() {
+    // Hash password if modified or is a new plain text password
+    if (this.password && this.password !== this._originalPassword && !this.password.startsWith("$2a$") && !this.password.startsWith("$2b$")) {
+      const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
+    }
+
+    const q = `
+      INSERT INTO users (
+        _id, name, email, password, role, is_verified, is_approved, is_blocked, 
+        wallet_balance, verification_token, verification_token_expire, 
+        reset_password_token, reset_password_expire, watchlist, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
+      ON CONFLICT (_id) DO UPDATE SET
+        name = EXCLUDED.name,
+        email = EXCLUDED.email,
+        password = EXCLUDED.password,
+        role = EXCLUDED.role,
+        is_verified = EXCLUDED.is_verified,
+        is_approved = EXCLUDED.is_approved,
+        is_blocked = EXCLUDED.is_blocked,
+        wallet_balance = EXCLUDED.wallet_balance,
+        verification_token = EXCLUDED.verification_token,
+        verification_token_expire = EXCLUDED.verification_token_expire,
+        reset_password_token = EXCLUDED.reset_password_token,
+        reset_password_expire = EXCLUDED.reset_password_expire,
+        watchlist = EXCLUDED.watchlist,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING *;
+    `;
+
+    const res = await pgQuery(q, [
+      this._id,
+      this.name,
+      this.email,
+      this.password,
+      this.role || "user",
+      this.isVerified || false,
+      this.isApproved || false,
+      this.isBlocked || false,
+      this.walletBalance || 0,
+      this.verificationToken || null,
+      this.verificationTokenExpire || null,
+      this.resetPasswordToken || null,
+      this.resetPasswordExpire || null,
+      JSON.stringify(this.watchlist || [])
+    ]);
+
+    if (res.rows.length > 0) {
+      const updatedRow = res.rows[0];
+      this.password = updatedRow.password;
+      this._originalPassword = updatedRow.password;
+      this.updatedAt = updatedRow.updated_at;
+    }
+    return this;
+  }
+
+  async matchPassword(enteredPassword) {
+    if (!this.password) return false;
+    return bcrypt.compare(enteredPassword, this.password);
+  }
+
+  generateVerificationToken() {
+    const plainToken = crypto.randomBytes(32).toString("hex");
+    this.verificationToken = crypto
+      .createHash("sha256")
+      .update(plainToken)
+      .digest("hex");
+    this.verificationTokenExpire = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    return plainToken;
+  }
+
+  generateResetPasswordToken() {
+    const plainToken = crypto.randomBytes(32).toString("hex");
+    this.resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(plainToken)
+      .digest("hex");
+    this.resetPasswordExpire = new Date(Date.now() + 60 * 60 * 1000);
+    return plainToken;
+  }
+}
+
+// User Model object providing Mongoose-like static methods
+const User = {
+  async findOne(queryObj = {}) {
+    let selectFields = "*";
+    const chain = {
+      select: (fields) => {
+        // Mongoose select('+password') or similar
+        return chain;
+      },
+      then: async (onfulfilled) => {
+        const result = await User.findOne(queryObj);
+        return onfulfilled ? onfulfilled(result) : result;
+      }
+    };
+
+    let sql = "SELECT * FROM users WHERE 1=1";
+    const params = [];
+    let idx = 1;
+
+    for (const [key, val] of Object.entries(queryObj)) {
+      if (key === "email") {
+        sql += ` AND LOWER(email) = LOWER($${idx})`;
+        params.push(val);
+      } else if (key === "verificationToken" || key === "resetPasswordToken") {
+        const col = key === "verificationToken" ? "verification_token" : "reset_password_token";
+        sql += ` AND ${col} = $${idx}`;
+        params.push(val);
+      } else if (key === "verificationTokenExpire" || key === "resetPasswordExpire") {
+        // Handles: { $gt: Date.now() }
+        const col = key === "verificationTokenExpire" ? "verification_token_expire" : "reset_password_expire";
+        if (val && typeof val === "object" && val.$gt) {
+          sql += ` AND ${col} > $${idx}`;
+          params.push(new Date(val.$gt));
+        } else {
+          sql += ` AND ${col} = $${idx}`;
+          params.push(val);
+        }
+      } else {
+        // General mapping for simple fields
+        const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+        sql += ` AND ${colName} = $${idx}`;
+        params.push(val);
+      }
+      idx++;
+    }
+
+    sql += " LIMIT 1";
+
+    try {
+      const res = await pgQuery(sql, params);
+      if (res.rows.length === 0) return null;
+      return new UserInstance(res.rows[0]);
+    } catch (err) {
+      console.error("User.findOne Error:", err.message);
+      return null;
+    }
+  },
+
+  async findById(id) {
+    if (!id) return null;
+    return User.findOne({ _id: id.toString() });
+  },
+
+  async find(queryObj = {}) {
+    let sql = "SELECT * FROM users WHERE 1=1";
+    const params = [];
+    let idx = 1;
+
+    for (const [key, val] of Object.entries(queryObj)) {
+      if (key === "_id") {
+        if (val && typeof val === "object" && val.$ne) {
+          sql += ` AND _id != $${idx}`;
+          params.push(val.$ne.toString());
+        } else {
+          sql += ` AND _id = $${idx}`;
+          params.push(val.toString());
+        }
+      } else {
+        const colName = key.replace(/([A-Z])/g, "_$1").toLowerCase();
+        sql += ` AND ${colName} = $${idx}`;
+        params.push(val);
+      }
+      idx++;
+    }
+
+    let sortOrder = "";
+    const chain = {
+      sort: (sortObj) => {
+        // Handles sorting
+        return chain;
+      },
+      then: async (onfulfilled) => {
+        const result = await pgQuery(sql, params);
+        const list = result.rows.map(row => new UserInstance(row));
+        return onfulfilled ? onfulfilled(list) : list;
+      }
+    };
+
+    // Make chain promise-like
+    chain.catch = (onrejected) => chain.then().catch(onrejected);
+
+    return chain;
+  },
+
+  async create(data) {
+    const id = data._id ? data._id.toString() : generateHexId();
+    
+    // Hash password before saving
+    let hashedPassword = data.password;
+    if (hashedPassword && !hashedPassword.startsWith("$2a$") && !hashedPassword.startsWith("$2b$")) {
+      const salt = await bcrypt.genSalt(10);
+      hashedPassword = await bcrypt.hash(hashedPassword, salt);
+    }
+
+    const q = `
+      INSERT INTO users (
+        _id, name, email, password, role, is_verified, is_approved, is_blocked, wallet_balance
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *;
+    `;
+
+    const res = await pgQuery(q, [
+      id,
+      data.name,
+      data.email,
+      hashedPassword,
+      data.role || "user",
+      data.isVerified || false,
+      data.isApproved || false,
+      data.isBlocked || false,
+      data.walletBalance || 0
+    ]);
+
+    return new UserInstance(res.rows[0]);
+  },
+
+  async findOneAndUpdate(filter, update, options = {}) {
+    const user = await User.findOne(filter);
+    if (!user) return null;
+
+    // Apply update operations
+    const fieldsToUpdate = update.$set || update;
+    for (const [key, val] of Object.entries(fieldsToUpdate)) {
+      user[key] = val;
+    }
+
+    await user.save();
+    return user;
+  },
+
+  async findByIdAndUpdate(id, update, options = {}) {
+    return User.findOneAndUpdate({ _id: id.toString() }, update, options);
+  },
+
+  async findByIdAndDelete(id) {
+    return User.deleteOne({ _id: id.toString() });
+  },
+
+  async deleteOne(filter) {
+    let sql = "DELETE FROM users WHERE 1=1";
+    const params = [];
+    let idx = 1;
+
+    for (const [key, val] of Object.entries(filter)) {
+      const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+      sql += ` AND ${colName} = $${idx}`;
+      params.push(val);
+      idx++;
+    }
+
+    await pgQuery(sql, params);
+    return { deletedCount: 1 };
+  }
+};
 
 export default User;

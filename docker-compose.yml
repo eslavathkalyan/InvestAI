@@ -7,13 +7,11 @@ services:
       - "5000:5000"
     environment:
       - PORT=5000
-      - MONGO_URI=mongodb://mongodb:27107/investai
       - POSTGRES_URI=postgresql://postgres:postgres@postgres:5432/investai
       - JWT_SECRET=super_secret_jwt_token_for_investai_aws_prod
       - CLIENT_URL=http://localhost:8080
       - LLM_PROVIDER=gemini
     depends_on:
-      - mongodb
       - postgres
 
   frontend:
@@ -25,24 +23,16 @@ services:
     depends_on:
       - backend
 
-  mongodb:
-    image: mongo:6.0
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
   postgres:
     image: postgres:15-alpine
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=root
+      - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=investai
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  mongo_data:
   postgres_data:

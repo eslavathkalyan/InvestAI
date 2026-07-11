@@ -26,7 +26,6 @@
         { "name": "NODE_ENV", "value": "production" }
       ],
       "secrets": [
-        { "name": "MONGO_URI", "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_ACCOUNT_ID:secret:MONGO_URI" },
         { "name": "POSTGRES_URI", "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_ACCOUNT_ID:secret:POSTGRES_URI" },
         { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_ACCOUNT_ID:secret:JWT_SECRET" },
         { "name": "GOOGLE_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_ACCOUNT_ID:secret:GOOGLE_API_KEY" }
