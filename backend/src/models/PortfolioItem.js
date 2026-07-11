@@ -24,57 +24,67 @@ class PortfolioItemInstance {
   }
 
   async save() {
-    const q = `
-      INSERT INTO portfolio_items (
-        _id, user_id, company, ticker, shares, purchase_price, purchase_date, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
-      ON CONFLICT (_id) DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        company = EXCLUDED.company,
-        ticker = EXCLUDED.ticker,
-        shares = EXCLUDED.shares,
-        purchase_price = EXCLUDED.purchase_price,
-        purchase_date = EXCLUDED.purchase_date,
-        updated_at = CURRENT_TIMESTAMP
-      RETURNING *;
-    `;
+    try {
+      const q = `
+        INSERT INTO portfolio_items (
+          _id, user_id, company, ticker, shares, purchase_price, purchase_date, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+        ON CONFLICT (_id) DO UPDATE SET
+          user_id = EXCLUDED.user_id,
+          company = EXCLUDED.company,
+          ticker = EXCLUDED.ticker,
+          shares = EXCLUDED.shares,
+          purchase_price = EXCLUDED.purchase_price,
+          purchase_date = EXCLUDED.purchase_date,
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING *;
+      `;
 
-    const res = await pgQuery(q, [
-      this._id.toString(),
-      this.userId ? this.userId.toString() : null,
-      this.company,
-      this.ticker,
-      this.shares,
-      this.purchasePrice,
-      this.purchaseDate || new Date()
-    ]);
+      const res = await pgQuery(q, [
+        this._id.toString(),
+        this.userId ? this.userId.toString() : null,
+        this.company,
+        this.ticker,
+        this.shares,
+        this.purchasePrice,
+        this.purchaseDate || new Date()
+      ]);
 
-    return this;
+      return this;
+    } catch (err) {
+      console.error("🔥 PortfolioItem.save database error:", err);
+      throw err;
+    }
   }
 }
 
 const PortfolioItem = {
   async create(data) {
-    const id = data._id ? data._id.toString() : generateHexId();
+    try {
+      const id = data._id ? data._id.toString() : generateHexId();
 
-    const q = `
-      INSERT INTO portfolio_items (
-        _id, user_id, company, ticker, shares, purchase_price, purchase_date
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *;
-    `;
+      const q = `
+        INSERT INTO portfolio_items (
+          _id, user_id, company, ticker, shares, purchase_price, purchase_date
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *;
+      `;
 
-    const res = await pgQuery(q, [
-      id,
-      data.userId ? data.userId.toString() : null,
-      data.company,
-      data.ticker,
-      data.shares,
-      data.purchasePrice,
-      data.purchaseDate || new Date()
-    ]);
+      const res = await pgQuery(q, [
+        id,
+        data.userId ? data.userId.toString() : null,
+        data.company,
+        data.ticker,
+        data.shares,
+        data.purchasePrice,
+        data.purchaseDate || new Date()
+      ]);
 
-    return new PortfolioItemInstance(res.rows[0]);
+      return new PortfolioItemInstance(res.rows[0]);
+    } catch (err) {
+      console.error("🔥 PortfolioItem.create database error:", err);
+      throw err;
+    }
   },
 
   find(queryObj = {}) {
@@ -114,6 +124,7 @@ const PortfolioItem = {
           const instances = res.rows.map(row => new PortfolioItemInstance(row));
           return resolve(instances);
         } catch (err) {
+          console.error("🔥 PortfolioItem.find database error:", err);
           if (reject) return reject(err);
           resolve([]);
         }
@@ -127,34 +138,44 @@ const PortfolioItem = {
   },
 
   async findOne(queryObj = {}) {
-    let sql = "SELECT * FROM portfolio_items WHERE 1=1";
-    const params = [];
-    let idx = 1;
+    try {
+      let sql = "SELECT * FROM portfolio_items WHERE 1=1";
+      const params = [];
+      let idx = 1;
 
-    for (const [key, val] of Object.entries(queryObj)) {
-      const colName = key === "userId" ? "user_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      
-      if (val && typeof val === "object" && val.$ne !== undefined) {
-        sql += ` AND ${colName} != $${idx}`;
-        params.push(val.$ne.toString());
-      } else {
-        sql += ` AND ${colName} = $${idx}`;
-        params.push(val ? val.toString() : val);
+      for (const [key, val] of Object.entries(queryObj)) {
+        const colName = key === "userId" ? "user_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+        
+        if (val && typeof val === "object" && val.$ne !== undefined) {
+          sql += ` AND ${colName} != $${idx}`;
+          params.push(val.$ne.toString());
+        } else {
+          sql += ` AND ${colName} = $${idx}`;
+          params.push(val ? val.toString() : val);
+        }
+        idx++;
       }
-      idx++;
+
+      sql += " LIMIT 1";
+
+      const res = await pgQuery(sql, params);
+      if (res.rows.length === 0) return null;
+      return new PortfolioItemInstance(res.rows[0]);
+    } catch (err) {
+      console.error("🔥 PortfolioItem.findOne database error:", err);
+      throw err;
     }
-
-    sql += " LIMIT 1";
-
-    const res = await pgQuery(sql, params);
-    if (res.rows.length === 0) return null;
-    return new PortfolioItemInstance(res.rows[0]);
   },
 
   async findByIdAndDelete(id) {
-    if (!id) return null;
-    await pgQuery("DELETE FROM portfolio_items WHERE _id = $1", [id.toString()]);
-    return { deletedCount: 1 };
+    try {
+      if (!id) return null;
+      await pgQuery("DELETE FROM portfolio_items WHERE _id = $1", [id.toString()]);
+      return { deletedCount: 1 };
+    } catch (err) {
+      console.error("🔥 PortfolioItem.findByIdAndDelete database error:", err);
+      throw err;
+    }
   }
 };
 

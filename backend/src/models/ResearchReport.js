@@ -45,70 +45,80 @@ class ResearchReportInstance {
   }
 
   async save() {
-    const q = `
-      INSERT INTO reports (
-        _id, user_id, company, ticker, decision, confidence, summary, 
-        positive_factors, risks, analysis, is_shared, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
-      ON CONFLICT (_id) DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        company = EXCLUDED.company,
-        ticker = EXCLUDED.ticker,
-        decision = EXCLUDED.decision,
-        confidence = EXCLUDED.confidence,
-        summary = EXCLUDED.summary,
-        positive_factors = EXCLUDED.positive_factors,
-        risks = EXCLUDED.risks,
-        analysis = EXCLUDED.analysis,
-        is_shared = EXCLUDED.is_shared,
-        updated_at = CURRENT_TIMESTAMP
-      RETURNING *;
-    `;
+    try {
+      const q = `
+        INSERT INTO reports (
+          _id, user_id, company, ticker, decision, confidence, summary, 
+          positive_factors, risks, analysis, is_shared, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
+        ON CONFLICT (_id) DO UPDATE SET
+          user_id = EXCLUDED.user_id,
+          company = EXCLUDED.company,
+          ticker = EXCLUDED.ticker,
+          decision = EXCLUDED.decision,
+          confidence = EXCLUDED.confidence,
+          summary = EXCLUDED.summary,
+          positive_factors = EXCLUDED.positive_factors,
+          risks = EXCLUDED.risks,
+          analysis = EXCLUDED.analysis,
+          is_shared = EXCLUDED.is_shared,
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING *;
+      `;
 
-    const res = await pgQuery(q, [
-      this._id.toString(),
-      this.userId ? this.userId.toString() : null,
-      this.company,
-      this.ticker,
-      this.decision,
-      this.confidence,
-      this.summary,
-      JSON.stringify(this.positiveFactors || []),
-      JSON.stringify(this.risks || []),
-      JSON.stringify(this.analysis || {}),
-      this.isShared || false
-    ]);
+      const res = await pgQuery(q, [
+        this._id.toString(),
+        this.userId ? this.userId.toString() : null,
+        this.company,
+        this.ticker,
+        this.decision,
+        this.confidence,
+        this.summary,
+        JSON.stringify(this.positiveFactors || []),
+        JSON.stringify(this.risks || []),
+        JSON.stringify(this.analysis || {}),
+        this.isShared || false
+      ]);
 
-    return this;
+      return this;
+    } catch (err) {
+      console.error("🔥 ResearchReport.save database error:", err);
+      throw err;
+    }
   }
 }
 
 const ResearchReport = {
   async create(data) {
-    const id = data._id ? data._id.toString() : generateHexId();
+    try {
+      const id = data._id ? data._id.toString() : generateHexId();
 
-    const q = `
-      INSERT INTO reports (
-        _id, user_id, company, ticker, decision, confidence, summary, positive_factors, risks, analysis, is_shared
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING *;
-    `;
+      const q = `
+        INSERT INTO reports (
+          _id, user_id, company, ticker, decision, confidence, summary, positive_factors, risks, analysis, is_shared
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *;
+      `;
 
-    const res = await pgQuery(q, [
-      id,
-      data.userId ? data.userId.toString() : null,
-      data.company,
-      data.ticker || null,
-      data.decision,
-      data.confidence,
-      data.summary,
-      JSON.stringify(data.positiveFactors || []),
-      JSON.stringify(data.risks || []),
-      JSON.stringify(data.analysis || {}),
-      data.isShared || false
-    ]);
+      const res = await pgQuery(q, [
+        id,
+        data.userId ? data.userId.toString() : null,
+        data.company,
+        data.ticker || null,
+        data.decision,
+        data.confidence,
+        data.summary,
+        JSON.stringify(data.positiveFactors || []),
+        JSON.stringify(data.risks || []),
+        JSON.stringify(data.analysis || {}),
+        data.isShared || false
+      ]);
 
-    return new ResearchReportInstance(res.rows[0]);
+      return new ResearchReportInstance(res.rows[0]);
+    } catch (err) {
+      console.error("🔥 ResearchReport.create database error:", err);
+      throw err;
+    }
   },
 
   find(queryObj = {}) {
@@ -173,6 +183,7 @@ const ResearchReport = {
 
           return resolve(instances);
         } catch (err) {
+          console.error("🔥 ResearchReport.find database error:", err);
           if (reject) return reject(err);
           resolve([]);
         }
@@ -186,41 +197,51 @@ const ResearchReport = {
   },
 
   async findById(id) {
-    if (!id) return null;
-    const res = await pgQuery("SELECT * FROM reports WHERE _id = $1 LIMIT 1", [id.toString()]);
-    if (res.rows.length === 0) return null;
-    return new ResearchReportInstance(res.rows[0]);
+    try {
+      if (!id) return null;
+      const res = await pgQuery("SELECT * FROM reports WHERE _id = $1 LIMIT 1", [id.toString()]);
+      if (res.rows.length === 0) return null;
+      return new ResearchReportInstance(res.rows[0]);
+    } catch (err) {
+      console.error("🔥 ResearchReport.findById database error:", err);
+      throw err;
+    }
   },
 
   async findOneAndUpdate(filter, update, options = {}) {
-    let sql = "SELECT * FROM reports WHERE 1=1";
-    const params = [];
-    let idx = 1;
+    try {
+      let sql = "SELECT * FROM reports WHERE 1=1";
+      const params = [];
+      let idx = 1;
 
-    for (const [key, val] of Object.entries(filter)) {
-      const colName = key === "userId" ? "user_id" : key === "isShared" ? "is_shared" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      
-      if (val && typeof val === "object" && val.$ne !== undefined) {
-        sql += ` AND ${colName} != $${idx}`;
-        params.push(val.$ne.toString());
-      } else {
-        sql += ` AND ${colName} = $${idx}`;
-        params.push(val ? val.toString() : val);
+      for (const [key, val] of Object.entries(filter)) {
+        const colName = key === "userId" ? "user_id" : key === "isShared" ? "is_shared" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+        
+        if (val && typeof val === "object" && val.$ne !== undefined) {
+          sql += ` AND ${colName} != $${idx}`;
+          params.push(val.$ne.toString());
+        } else {
+          sql += ` AND ${colName} = $${idx}`;
+          params.push(val ? val.toString() : val);
+        }
+        idx++;
       }
-      idx++;
+
+      const res = await pgQuery(sql, params);
+      if (res.rows.length === 0) return null;
+
+      const report = new ResearchReportInstance(res.rows[0]);
+      const fieldsToUpdate = update.$set || update;
+      for (const [key, val] of Object.entries(fieldsToUpdate)) {
+        report[key] = val;
+      }
+
+      await report.save();
+      return report;
+    } catch (err) {
+      console.error("🔥 ResearchReport.findOneAndUpdate database error:", err);
+      throw err;
     }
-
-    const res = await pgQuery(sql, params);
-    if (res.rows.length === 0) return null;
-
-    const report = new ResearchReportInstance(res.rows[0]);
-    const fieldsToUpdate = update.$set || update;
-    for (const [key, val] of Object.entries(fieldsToUpdate)) {
-      report[key] = val;
-    }
-
-    await report.save();
-    return report;
   },
 
   async countDocuments(filter = {}) {
@@ -245,31 +266,36 @@ const ResearchReport = {
       const res = await pgQuery(sql, params);
       return Number(res.rows[0].count);
     } catch (err) {
-      console.error("ResearchReport.countDocuments Error:", err.message);
-      return 0;
+      console.error("🔥 ResearchReport.countDocuments database error:", err);
+      throw err;
     }
   },
 
   async deleteMany(filter = {}) {
-    let sql = "DELETE FROM reports WHERE 1=1";
-    const params = [];
-    let idx = 1;
+    try {
+      let sql = "DELETE FROM reports WHERE 1=1";
+      const params = [];
+      let idx = 1;
 
-    for (const [key, val] of Object.entries(filter)) {
-      const colName = key === "userId" ? "user_id" : key === "isShared" ? "is_shared" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      
-      if (val && typeof val === "object" && val.$ne !== undefined) {
-        sql += ` AND ${colName} != $${idx}`;
-        params.push(val.$ne.toString());
-      } else {
-        sql += ` AND ${colName} = $${idx}`;
-        params.push(val ? val.toString() : val);
+      for (const [key, val] of Object.entries(filter)) {
+        const colName = key === "userId" ? "user_id" : key === "isShared" ? "is_shared" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+        
+        if (val && typeof val === "object" && val.$ne !== undefined) {
+          sql += ` AND ${colName} != $${idx}`;
+          params.push(val.$ne.toString());
+        } else {
+          sql += ` AND ${colName} = $${idx}`;
+          params.push(val ? val.toString() : val);
+        }
+        idx++;
       }
-      idx++;
-    }
 
-    await pgQuery(sql, params);
-    return { deletedCount: 1 };
+      await pgQuery(sql, params);
+      return { deletedCount: 1 };
+    } catch (err) {
+      console.error("🔥 ResearchReport.deleteMany database error:", err);
+      throw err;
+    }
   }
 };
 

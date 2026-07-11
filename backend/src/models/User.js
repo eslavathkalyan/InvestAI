@@ -44,60 +44,65 @@ class UserInstance {
   }
 
   async save() {
-    // Hash password if modified or is a new plain text password
-    if (this.password && this.password !== this._originalPassword && !this.password.startsWith("$2a$") && !this.password.startsWith("$2b$")) {
-      const salt = await bcrypt.genSalt(10);
-      this.password = await bcrypt.hash(this.password, salt);
+    try {
+      // Hash password if modified or is a new plain text password
+      if (this.password && this.password !== this._originalPassword && !this.password.startsWith("$2a$") && !this.password.startsWith("$2b$")) {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+      }
+
+      const q = `
+        INSERT INTO users (
+          _id, name, email, password, role, is_verified, is_approved, is_blocked, 
+          wallet_balance, verification_token, verification_token_expire, 
+          reset_password_token, reset_password_expire, watchlist, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
+        ON CONFLICT (_id) DO UPDATE SET
+          name = EXCLUDED.name,
+          email = EXCLUDED.email,
+          password = EXCLUDED.password,
+          role = EXCLUDED.role,
+          is_verified = EXCLUDED.is_verified,
+          is_approved = EXCLUDED.is_approved,
+          is_blocked = EXCLUDED.is_blocked,
+          wallet_balance = EXCLUDED.wallet_balance,
+          verification_token = EXCLUDED.verification_token,
+          verification_token_expire = EXCLUDED.verification_token_expire,
+          reset_password_token = EXCLUDED.reset_password_token,
+          reset_password_expire = EXCLUDED.reset_password_expire,
+          watchlist = EXCLUDED.watchlist,
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING *;
+      `;
+
+      const res = await pgQuery(q, [
+        this._id.toString(),
+        this.name,
+        this.email,
+        this.password,
+        this.role || "user",
+        this.isVerified || false,
+        this.isApproved || false,
+        this.isBlocked || false,
+        this.walletBalance || 0,
+        this.verificationToken || null,
+        this.verificationTokenExpire ? new Date(this.verificationTokenExpire) : null,
+        this.resetPasswordToken || null,
+        this.resetPasswordExpire ? new Date(this.resetPasswordExpire) : null,
+        JSON.stringify(this.watchlist || [])
+      ]);
+
+      if (res.rows.length > 0) {
+        const updatedRow = res.rows[0];
+        this.password = updatedRow.password;
+        this._originalPassword = updatedRow.password;
+        this.updatedAt = updatedRow.updated_at;
+      }
+      return this;
+    } catch (err) {
+      console.error("🔥 User.save database error:", err);
+      throw err;
     }
-
-    const q = `
-      INSERT INTO users (
-        _id, name, email, password, role, is_verified, is_approved, is_blocked, 
-        wallet_balance, verification_token, verification_token_expire, 
-        reset_password_token, reset_password_expire, watchlist, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
-      ON CONFLICT (_id) DO UPDATE SET
-        name = EXCLUDED.name,
-        email = EXCLUDED.email,
-        password = EXCLUDED.password,
-        role = EXCLUDED.role,
-        is_verified = EXCLUDED.is_verified,
-        is_approved = EXCLUDED.is_approved,
-        is_blocked = EXCLUDED.is_blocked,
-        wallet_balance = EXCLUDED.wallet_balance,
-        verification_token = EXCLUDED.verification_token,
-        verification_token_expire = EXCLUDED.verification_token_expire,
-        reset_password_token = EXCLUDED.reset_password_token,
-        reset_password_expire = EXCLUDED.reset_password_expire,
-        watchlist = EXCLUDED.watchlist,
-        updated_at = CURRENT_TIMESTAMP
-      RETURNING *;
-    `;
-
-    const res = await pgQuery(q, [
-      this._id.toString(),
-      this.name,
-      this.email,
-      this.password,
-      this.role || "user",
-      this.isVerified || false,
-      this.isApproved || false,
-      this.isBlocked || false,
-      this.walletBalance || 0,
-      this.verificationToken || null,
-      this.verificationTokenExpire ? new Date(this.verificationTokenExpire) : null,
-      this.resetPasswordToken || null,
-      this.resetPasswordExpire ? new Date(this.resetPasswordExpire) : null,
-      JSON.stringify(this.watchlist || [])
-    ]);
-
-    if (res.rows.length > 0) {
-      const updatedRow = res.rows[0];
-      this.password = updatedRow.password;
-      this._originalPassword = updatedRow.password;
-      this.updatedAt = updatedRow.updated_at;
-    }
-    return this;
   }
 
   async matchPassword(enteredPassword) {
@@ -180,6 +185,7 @@ const User = {
           }
           return resolve(new UserInstance(res.rows[0]));
         } catch (err) {
+          console.error("🔥 User.findOne database error:", err);
           if (reject) return reject(err);
           resolve(null);
         }
@@ -224,6 +230,7 @@ const User = {
           const list = result.rows.map(row => new UserInstance(row));
           return resolve(list);
         } catch (err) {
+          console.error("🔥 User.find database error:", err);
           if (reject) return reject(err);
           resolve([]);
         }
@@ -258,41 +265,46 @@ const User = {
       const res = await pgQuery(sql, params);
       return Number(res.rows[0].count);
     } catch (err) {
-      console.error("User.countDocuments Error:", err.message);
-      return 0;
+      console.error("🔥 User.countDocuments database error:", err);
+      throw err;
     }
   },
 
   async create(data) {
-    const id = data._id ? data._id.toString() : generateHexId();
-    
-    // Hash password before saving
-    let hashedPassword = data.password;
-    if (hashedPassword && !hashedPassword.startsWith("$2a$") && !hashedPassword.startsWith("$2b$")) {
-      const salt = await bcrypt.genSalt(10);
-      hashedPassword = await bcrypt.hash(hashedPassword, salt);
+    try {
+      const id = data._id ? data._id.toString() : generateHexId();
+      
+      // Hash password before saving
+      let hashedPassword = data.password;
+      if (hashedPassword && !hashedPassword.startsWith("$2a$") && !hashedPassword.startsWith("$2b$")) {
+        const salt = await bcrypt.genSalt(10);
+        hashedPassword = await bcrypt.hash(hashedPassword, salt);
+      }
+
+      const q = `
+        INSERT INTO users (
+          _id, name, email, password, role, is_verified, is_approved, is_blocked, wallet_balance
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *;
+      `;
+
+      const res = await pgQuery(q, [
+        id,
+        data.name,
+        data.email,
+        hashedPassword,
+        data.role || "user",
+        data.isVerified || false,
+        data.isApproved || false,
+        data.isBlocked || false,
+        data.walletBalance || 0
+      ]);
+
+      return new UserInstance(res.rows[0]);
+    } catch (err) {
+      console.error("🔥 User.create database error:", err);
+      throw err;
     }
-
-    const q = `
-      INSERT INTO users (
-        _id, name, email, password, role, is_verified, is_approved, is_blocked, wallet_balance
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *;
-    `;
-
-    const res = await pgQuery(q, [
-      id,
-      data.name,
-      data.email,
-      hashedPassword,
-      data.role || "user",
-      data.isVerified || false,
-      data.isApproved || false,
-      data.isBlocked || false,
-      data.walletBalance || 0
-    ]);
-
-    return new UserInstance(res.rows[0]);
   },
 
   async findOneAndUpdate(filter, update, options = {}) {
@@ -318,24 +330,29 @@ const User = {
   },
 
   async deleteOne(filter) {
-    let sql = "DELETE FROM users WHERE 1=1";
-    const params = [];
-    let idx = 1;
+    try {
+      let sql = "DELETE FROM users WHERE 1=1";
+      const params = [];
+      let idx = 1;
 
-    for (const [key, val] of Object.entries(filter)) {
-      const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      if (val && typeof val === "object" && val.$ne !== undefined) {
-        sql += ` AND ${colName} != $${idx}`;
-        params.push(val.$ne.toString());
-      } else {
-        sql += ` AND ${colName} = $${idx}`;
-        params.push(val ? val.toString() : val);
+      for (const [key, val] of Object.entries(filter)) {
+        const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+        if (val && typeof val === "object" && val.$ne !== undefined) {
+          sql += ` AND ${colName} != $${idx}`;
+          params.push(val.$ne.toString());
+        } else {
+          sql += ` AND ${colName} = $${idx}`;
+          params.push(val ? val.toString() : val);
+        }
+        idx++;
       }
-      idx++;
-    }
 
-    await pgQuery(sql, params);
-    return { deletedCount: 1 };
+      await pgQuery(sql, params);
+      return { deletedCount: 1 };
+    } catch (err) {
+      console.error("🔥 User.deleteOne database error:", err);
+      throw err;
+    }
   }
 };
 
