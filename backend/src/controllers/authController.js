@@ -56,16 +56,20 @@ const register = asyncHandler(async (req, res) => {
 
   console.log("GENERATED OTP FOR " + user.email + " IS: " + otp);
 
-  await sendEmail({
-    to: user.email,
-    subject: "Verify your InvestAI account",
-    html: `
-      <p>Hi ${user.name},</p>
-      <p>Thank you for signing up for InvestAI. Use the following One-Time Password (OTP) to verify your account:</p>
-      <h2 style="font-size: 24px; letter-spacing: 4px; color: #16223F; font-family: monospace; font-weight: bold;">${otp}</h2>
-      <p>This OTP is valid for 15 minutes.</p>
-    `,
-  });
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your InvestAI account",
+      html: `
+        <p>Hi ${user.name},</p>
+        <p>Thank you for signing up for InvestAI. Use the following One-Time Password (OTP) to verify your account:</p>
+        <h2 style="font-size: 24px; letter-spacing: 4px; color: #16223F; font-family: monospace; font-weight: bold;">${otp}</h2>
+        <p>This OTP is valid for 15 minutes.</p>
+      `,
+    });
+  } catch (emailError) {
+    console.error("Failed to send verification email:", emailError.message);
+  }
 
   res.status(201).json({
     requiresVerification: true,
@@ -217,16 +221,20 @@ const login = asyncHandler(async (req, res) => {
 
   console.log("GENERATED OTP FOR " + user.email + " IS: " + otp);
 
-  await sendEmail({
-    to: user.email,
-    subject: "Verify your InvestAI account",
-    html: `
-      <p>Hi ${user.name},</p>
-      <p>Use the following One-Time Password (OTP) to complete your login:</p>
-      <h2 style="font-size: 24px; letter-spacing: 4px; color: #16223F; font-family: monospace; font-weight: bold;">${otp}</h2>
-      <p>This OTP is valid for 15 minutes.</p>
-    `,
-  });
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your InvestAI account",
+      html: `
+        <p>Hi ${user.name},</p>
+        <p>Use the following One-Time Password (OTP) to complete your login:</p>
+        <h2 style="font-size: 24px; letter-spacing: 4px; color: #16223F; font-family: monospace; font-weight: bold;">${otp}</h2>
+        <p>This OTP is valid for 15 minutes.</p>
+      `,
+    });
+  } catch (emailError) {
+    console.error("Failed to send login verification email:", emailError.message);
+  }
 
   res.status(202).json({
     requiresVerification: true,
@@ -255,16 +263,20 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-  await sendEmail({
-    to: user.email,
-    subject: "Reset your InvestAI password",
-    html: `
-      <p>Hi ${user.name},</p>
-      <p>Click the link below to reset your password:</p>
-      <a href="${resetUrl}">${resetUrl}</a>
-      <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>
-    `,
-  });
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Reset your InvestAI password",
+      html: `
+        <p>Hi ${user.name},</p>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetUrl}">${resetUrl}</a>
+        <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>
+      `,
+    });
+  } catch (emailError) {
+    console.error("Failed to send password reset email:", emailError.message);
+  }
 
   res.status(200).json(genericMessage);
 });
@@ -337,16 +349,20 @@ const resendOtp = asyncHandler(async (req, res) => {
 
   console.log("GENERATED OTP FOR " + user.email + " IS: " + otp);
 
-  await sendEmail({
-    to: user.email,
-    subject: "Verify your InvestAI account",
-    html: `
-      <p>Hi ${user.name},</p>
-      <p>Here is your new One-Time Password (OTP) to verify your account:</p>
-      <h2 style="font-size: 24px; letter-spacing: 4px; color: #16223F; font-family: monospace; font-weight: bold;">${otp}</h2>
-      <p>This OTP is valid for 15 minutes.</p>
-    `,
-  });
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your InvestAI account",
+      html: `
+        <p>Hi ${user.name},</p>
+        <p>Here is your new One-Time Password (OTP) to verify your account:</p>
+        <h2 style="font-size: 24px; letter-spacing: 4px; color: #16223F; font-family: monospace; font-weight: bold;">${otp}</h2>
+        <p>This OTP is valid for 15 minutes.</p>
+      `,
+    });
+  } catch (emailError) {
+    console.error("Failed to resend verification OTP email:", emailError.message);
+  }
 
   res.status(200).json({ message: "OTP resent successfully. Please check your email." });
 });
