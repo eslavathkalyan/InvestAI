@@ -122,60 +122,61 @@ class UserInstance {
 
 // User Model object providing Mongoose-like static methods
 const User = {
-  async findOne(queryObj = {}) {
+  findOne(queryObj = {}) {
     let selectFields = "*";
     const chain = {
       select: (fields) => {
         // Mongoose select('+password') or similar
         return chain;
       },
-      then: async (onfulfilled) => {
-        const result = await User.findOne(queryObj);
-        return onfulfilled ? onfulfilled(result) : result;
+      then: async (resolve, reject) => {
+        try {
+          let sql = "SELECT * FROM users WHERE 1=1";
+          const params = [];
+          let idx = 1;
+
+          for (const [key, val] of Object.entries(queryObj)) {
+            if (key === "email") {
+              sql += ` AND LOWER(email) = LOWER($${idx})`;
+              params.push(val);
+            } else if (key === "verificationToken" || key === "resetPasswordToken") {
+              const col = key === "verificationToken" ? "verification_token" : "reset_password_token";
+              sql += ` AND ${col} = $${idx}`;
+              params.push(val);
+            } else if (key === "verificationTokenExpire" || key === "resetPasswordExpire") {
+              const col = key === "verificationTokenExpire" ? "verification_token_expire" : "reset_password_expire";
+              if (val && typeof val === "object" && val.$gt) {
+                sql += ` AND ${col} > $${idx}`;
+                params.push(new Date(val.$gt));
+              } else {
+                sql += ` AND ${col} = $${idx}`;
+                params.push(val);
+              }
+            } else {
+              const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
+              sql += ` AND ${colName} = $${idx}`;
+              params.push(val);
+            }
+            idx++;
+          }
+
+          sql += " LIMIT 1";
+
+          const res = await pgQuery(sql, params);
+          if (res.rows.length === 0) {
+            return resolve(null);
+          }
+          return resolve(new UserInstance(res.rows[0]));
+        } catch (err) {
+          if (reject) return reject(err);
+          resolve(null);
+        }
+      },
+      catch: (onrejected) => {
+        return chain.then(null, onrejected);
       }
     };
-
-    let sql = "SELECT * FROM users WHERE 1=1";
-    const params = [];
-    let idx = 1;
-
-    for (const [key, val] of Object.entries(queryObj)) {
-      if (key === "email") {
-        sql += ` AND LOWER(email) = LOWER($${idx})`;
-        params.push(val);
-      } else if (key === "verificationToken" || key === "resetPasswordToken") {
-        const col = key === "verificationToken" ? "verification_token" : "reset_password_token";
-        sql += ` AND ${col} = $${idx}`;
-        params.push(val);
-      } else if (key === "verificationTokenExpire" || key === "resetPasswordExpire") {
-        // Handles: { $gt: Date.now() }
-        const col = key === "verificationTokenExpire" ? "verification_token_expire" : "reset_password_expire";
-        if (val && typeof val === "object" && val.$gt) {
-          sql += ` AND ${col} > $${idx}`;
-          params.push(new Date(val.$gt));
-        } else {
-          sql += ` AND ${col} = $${idx}`;
-          params.push(val);
-        }
-      } else {
-        // General mapping for simple fields
-        const colName = key === "_id" ? "_id" : key.replace(/([A-Z])/g, "_$1").toLowerCase();
-        sql += ` AND ${colName} = $${idx}`;
-        params.push(val);
-      }
-      idx++;
-    }
-
-    sql += " LIMIT 1";
-
-    try {
-      const res = await pgQuery(sql, params);
-      if (res.rows.length === 0) return null;
-      return new UserInstance(res.rows[0]);
-    } catch (err) {
-      console.error("User.findOne Error:", err.message);
-      return null;
-    }
+    return chain;
   },
 
   async findById(id) {
@@ -183,7 +184,7 @@ const User = {
     return User.findOne({ _id: id.toString() });
   },
 
-  async find(queryObj = {}) {
+  find(queryObj = {}) {
     let sql = "SELECT * FROM users WHERE 1=1";
     const params = [];
     let idx = 1;
@@ -205,21 +206,24 @@ const User = {
       idx++;
     }
 
-    let sortOrder = "";
     const chain = {
       sort: (sortObj) => {
-        // Handles sorting
         return chain;
       },
-      then: async (onfulfilled) => {
-        const result = await pgQuery(sql, params);
-        const list = result.rows.map(row => new UserInstance(row));
-        return onfulfilled ? onfulfilled(list) : list;
+      then: async (resolve, reject) => {
+        try {
+          const result = await pgQuery(sql, params);
+          const list = result.rows.map(row => new UserInstance(row));
+          return resolve(list);
+        } catch (err) {
+          if (reject) return reject(err);
+          resolve([]);
+        }
+      },
+      catch: (onrejected) => {
+        return chain.then(null, onrejected);
       }
     };
-
-    // Make chain promise-like
-    chain.catch = (onrejected) => chain.then().catch(onrejected);
 
     return chain;
   },
