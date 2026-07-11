@@ -82,7 +82,7 @@ flowchart LR
         Mail[SMTP]
     end
 
-    DB[(MongoDB)]
+    DB[(PostgreSQL)]
 
     FE -- "REST: auth, reports, admin" --> API
     FE -- "fetch + manual SSE parse" --> SSE
@@ -95,7 +95,7 @@ flowchart LR
     API --> Mail
 ```
 
-**Backend:** Node.js + Express + MongoDB/Mongoose. `routes/` map HTTP verbs
+**Backend:** Node.js + Express + PostgreSQL. `routes/` map HTTP verbs
 to `controllers/`, which use `models/` and the `agents/` pipeline.
 `middleware/` handles JWT verification and role checks, `utils/` holds small
 reusable pieces (email sending, token generation, the async-error wrapper).
@@ -106,11 +106,7 @@ source of truth for "who's logged in," `components/` are reusable pieces,
 `pages/` are routes. The Research page (and its Three.js dependency weight)
 is lazy-loaded, so logging in or reading the landing page never downloads it.
 
-**Why MongoDB over a relational DB:** research reports have a natural
-document shape — one report, with a nested breakdown from four agents whose
-output schemas can evolve independently. Modeling that relationally would
-mean either a wide sparse table or several join tables for data that's
-always read and written as one unit.
+**Why PostgreSQL over a document store:** Financial applications demand high data integrity, transactional constraints (ACID), and relational schemas (e.g., matching portfolio transactions to specific user accounts). PostgreSQL provides this rigorous structure. For unstructured data like multi-agent research analysis documents, we leverage PostgreSQL's native JSON capabilities (stored as serialized structures), combining relational reliability with document flexibility.
 
 ---
 
@@ -172,8 +168,7 @@ instead of silently presenting a model's guess as verified market data.
 ## Installation
 
 **Prerequisites:** Node.js 18+ (built and tested against Node 22), and a
-MongoDB connection — either a local `mongod` or a free
-[MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) cluster.
+PostgreSQL database (either a local server, a Docker container, or a hosted service like Neon).
 
 ### 1. Backend
 
@@ -181,7 +176,7 @@ MongoDB connection — either a local `mongod` or a free
 cd backend
 npm install
 cp .env.example .env
-# edit .env - at minimum set MONGO_URI, JWT_SECRET, and GOOGLE_API_KEY
+# edit .env - at minimum set POSTGRES_URI, JWT_SECRET, and GOOGLE_API_KEY
 npm run dev
 ```
 
@@ -212,7 +207,7 @@ Runs on `http://localhost:5173`.
   [Mailtrap](https://mailtrap.io) or [Ethereal Email](https://ethereal.email)
   give free fake SMTP credentials that catch emails in a browser instead of
   actually sending them. Without SMTP configured, manually set
-  `isVerified: true` on the user document in MongoDB to unblock login.
+  `is_verified = true` on the user record in PostgreSQL to unblock login.
 
 ### 4. First login
 
@@ -230,7 +225,7 @@ accounts you register from `/admin`.
 |---|---|---|
 | `PORT` | No (default `5000`) | Server port |
 | `CLIENT_URL` | Yes | Frontend URL — used for CORS and email links |
-| `MONGO_URI` | Yes | MongoDB connection string |
+| `POSTGRES_URI` | Yes | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | Any long random string |
 | `JWT_EXPIRE` | No (default `7d`) | Token lifetime |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Yes | Email verification + reset |
