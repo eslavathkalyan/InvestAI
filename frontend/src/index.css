@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  /*
+    Light mode. Cream base and navy text per the brief. Gold is the
+    primary accent - kept as a restrained brass/bronze tone rather
+    than a bright yellow, so it reads "professional finance" instead
+    of "SaaS product". Blue is the secondary accent, used for links
+    and lower-emphasis actions so gold stays meaningful as the one
+    "important" color instead of being used everywhere.
+  */
+
+  --color-paper: #ffffff;
+  --color-ink: #16223F;
+  --color-navy: #16223F;
+  --color-gold: #BA9E75;
+  --color-signal: #2F5D8A;
+
+  /* Semantic colors for decisions/risk - used consistently instead
+     of picking a random green/red per component. */
+  --color-positive: #3F7A5C;
+  --color-caution: #B44242;
+
+  /*
+    Dark "finance theme". Same accent hues as light mode so gold
+    still means gold and risk still means risk in either theme - only
+    the surfaces change.
+  */
+  --color-dark-bg: #0E1420;
+  --color-dark-surface: #161F32;
+  --color-dark-text: #EAE6DF;
+
+  /*
+    Luxury editorial typography system. Cormorant Garamond provides a
+    classic, elegant, high-contrast serif typeface for headers. Plus
+    Jakarta Sans keeps UI controls and body reading clean and sharp.
+  */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  --shadow-card: 0 1px 2px rgba(22, 34, 63, 0.04), 0 8px 24px rgba(22, 34, 63, 0.06);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+:root.dark {
+  --color-cream: var(--color-dark-bg);
+  --color-paper: var(--color-dark-surface);
+  --color-ink: var(--color-dark-text);
+}
