@@ -42,7 +42,7 @@ get back a structured, saved report they can revisit later.
    reading the company overview and doing their own analysis
 4. A **Decision Agent** reads all four outputs and commits to INVEST or PASS,
    with a confidence score, positive factors, and risks
-5. The result is saved to MongoDB and shown as a decision card, a reasoning
+5. The result is saved to PostgreSQL and shown as a decision card, a reasoning
    panel (per-agent breakdown), and a score chart
 
 **Core features:**
@@ -350,7 +350,7 @@ written and assumed to work:
   database layer works correctly while being upfront that the database
   layer itself needs testing with your own real `MONGO_URI`.
 
-What this means practically: once you provide a real `MONGO_URI` and API
+What this means practically: once you provide a real `POSTGRES_URI` and API
 keys, the parts that could only be verified up to "everything except the
 actual external call" should work immediately — that boundary is the one
 thing that honestly couldn't be tested inside the environment this was built
