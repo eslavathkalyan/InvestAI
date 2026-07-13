@@ -27,7 +27,7 @@ const getRealFinancialData = async (companyName) => {
 const runFinancialAgent = async (state) => {
   const realData = await getRealFinancialData(state.company);
 
-  const llm = getLLM().withStructuredOutput(financialSchema, {
+  const llm = getLLM(state.provider).withStructuredOutput(financialSchema, {
     name: "FinancialAnalysis",
   });
 

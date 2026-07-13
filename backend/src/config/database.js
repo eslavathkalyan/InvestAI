@@ -95,6 +95,10 @@ const createTables = async () => {
     await pool.query(createUsersTable);
     await pool.query(createReportsTable);
     await pool.query(createPortfolioTable);
+    // Add provider column if it doesn't exist yet (idempotent migration)
+    await pool.query(`
+      ALTER TABLE reports ADD COLUMN IF NOT EXISTS provider VARCHAR(50) DEFAULT 'gemini';
+    `);
     console.log("🐘 PostgreSQL database tables initialized successfully.");
   } catch (err) {
     console.error("❌ Error initializing PostgreSQL tables:", err.message);

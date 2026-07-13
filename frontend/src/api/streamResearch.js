@@ -1,11 +1,10 @@
 
-
-export async function streamResearch(company, { onEvent, signal }) {
+export async function streamResearch(company, { onEvent, signal, provider = "gemini" }) {
   const token = localStorage.getItem("token");
   const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
   const response = await fetch(
-    `${baseURL}/research/stream?company=${encodeURIComponent(company)}`,
+    `${baseURL}/research/stream?company=${encodeURIComponent(company)}&provider=${encodeURIComponent(provider)}`,
     {
       headers: { Authorization: `Bearer ${token}` },
       signal,
@@ -18,7 +17,7 @@ export async function streamResearch(company, { onEvent, signal }) {
       const errData = await response.json();
       errMsg = errData.message || errMsg;
     } catch {
-      
+      // ignore parse error
     }
     throw new Error(errMsg);
   }

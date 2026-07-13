@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getAgents,
   createResearch,
   streamResearchHandler,
   getMyReports,
@@ -10,6 +11,9 @@ import {
 import protect from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Public (protected by auth) route to list available AI agents
+router.get("/agents", protect, getAgents);
 
 router.use(protect);
 

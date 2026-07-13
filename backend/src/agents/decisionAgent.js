@@ -10,7 +10,7 @@ const decisionSchema = z.object({
 });
 
 const runDecisionAgent = async (state) => {
-  const llm = getLLM().withStructuredOutput(decisionSchema, {
+  const llm = getLLM(state.provider).withStructuredOutput(decisionSchema, {
     name: "InvestmentDecision",
   });
 

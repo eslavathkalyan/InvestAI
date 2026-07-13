@@ -10,7 +10,7 @@ const marketSchema = z.object({
 });
 
 const runMarketAgent = async (state) => {
-  const llm = getLLM().withStructuredOutput(marketSchema, {
+  const llm = getLLM(state.provider).withStructuredOutput(marketSchema, {
     name: "MarketAnalysis",
   });
 

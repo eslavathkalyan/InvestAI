@@ -1,8 +1,11 @@
 import ResearchReport from "../models/ResearchReport.js";
 import { runResearch, streamResearch } from "../agents/researchGraph.js";
+import { getAvailableAgents } from "../config/llm.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { validateStockMarketPresence } from "../utils/stockValidator.js";
 import { runPythonSentimentAnalysis } from "../utils/pythonService.js";
+
+const VALID_PROVIDERS = ["gemini", "openai", "claude"];
 
 const saveReportFromState = (userId, state) => {
   let ticker = state.company.trim().toUpperCase();
@@ -21,6 +24,7 @@ const saveReportFromState = (userId, state) => {
     userId,
     company: state.company,
     ticker,
+    provider: state.provider || "gemini",
     decision: state.decision.decision,
     confidence: state.decision.confidence,
     summary: state.decision.summary,
@@ -36,12 +40,19 @@ const saveReportFromState = (userId, state) => {
   });
 };
 
+const getAgents = asyncHandler(async (req, res) => {
+  const agents = getAvailableAgents();
+  res.status(200).json(agents);
+});
+
 const createResearch = asyncHandler(async (req, res) => {
-  const { company } = req.body;
+  const { company, provider } = req.body;
 
   if (!company || !company.trim()) {
     return res.status(400).json({ message: "Please provide a company name" });
   }
+
+  const resolvedProvider = VALID_PROVIDERS.includes(provider) ? provider : "gemini";
 
   const validation = await validateStockMarketPresence(company.trim());
   if (!validation.isValid) {
@@ -50,7 +61,7 @@ const createResearch = asyncHandler(async (req, res) => {
 
   // Run LangGraph and Python Sentiment script in parallel
   const [result, sentiment] = await Promise.all([
-    runResearch(company.trim()),
+    runResearch(company.trim(), resolvedProvider),
     runPythonSentimentAnalysis(company.trim())
   ]);
 
@@ -62,6 +73,7 @@ const createResearch = asyncHandler(async (req, res) => {
 
 const streamResearchHandler = asyncHandler(async (req, res) => {
   const company = req.query.company?.trim();
+  const provider = VALID_PROVIDERS.includes(req.query.provider) ? req.query.provider : "gemini";
 
   if (!company) {
     return res.status(400).json({ message: "Please provide a company name" });
@@ -84,11 +96,11 @@ const streamResearchHandler = asyncHandler(async (req, res) => {
 
   try {
     let finalState = null;
-    
+
     // Start Python sentiment analysis in parallel with LangGraph stream
     const sentimentPromise = runPythonSentimentAnalysis(company);
 
-    for await (const event of streamResearch(company)) {
+    for await (const event of streamResearch(company, provider)) {
       if (event.type === "result") {
         finalState = event.state;
       } else {
@@ -159,4 +171,4 @@ const getSharedReports = asyncHandler(async (req, res) => {
   res.status(200).json(reports);
 });
 
-export { createResearch, streamResearchHandler, getMyReports, getReportById, shareReport, getSharedReports };
+export { getAgents, createResearch, streamResearchHandler, getMyReports, getReportById, shareReport, getSharedReports };

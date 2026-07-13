@@ -4,7 +4,7 @@ import PortfolioItem from "../models/PortfolioItem.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({ role: { $ne: "admin" } }).sort({ createdAt: -1 });
+  const users = await User.find({}).sort({ createdAt: -1 });
   res.status(200).json(users);
 });
 

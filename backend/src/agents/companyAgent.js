@@ -11,7 +11,7 @@ const companySchema = z.object({
 });
 
 const runCompanyAgent = async (state) => {
-  const llm = getLLM().withStructuredOutput(companySchema, {
+  const llm = getLLM(state.provider).withStructuredOutput(companySchema, {
     name: "CompanyOverview",
   });
 

@@ -7,6 +7,7 @@ import runDecisionAgent from "./decisionAgent.js";
 
 const ResearchState = Annotation.Root({
   company: Annotation(),
+  provider: Annotation(),   // <-- which LLM to use (gemini | openai | claude)
   companyOverview: Annotation(),
   financial: Annotation(),
   market: Annotation(),
@@ -28,9 +29,10 @@ const graph = new StateGraph(ResearchState)
   .addEdge("decisionAgent", END)
   .compile();
 
-const getMockState = (companyName) => {
+const getMockState = (companyName, provider = "gemini") => {
   return {
     company: companyName,
+    provider,
     companyOverview: {
       overview: `${companyName} is an industry-leading global company known for innovation, expanding its market capabilities, and driving core product cycles.`,
       products: ["Enterprise Solutions", "Next-Gen Consumer Technology", "Cloud Integration Services"],
@@ -67,12 +69,12 @@ const getMockState = (companyName) => {
   };
 };
 
-export const runResearch = async (companyName) => {
+export const runResearch = async (companyName, provider = "gemini") => {
   try {
-    return await graph.invoke({ company: companyName });
+    return await graph.invoke({ company: companyName, provider });
   } catch (error) {
     console.warn(`Graph invocation failed, falling back to mock state: ${error.message}`);
-    return getMockState(companyName);
+    return getMockState(companyName, provider);
   }
 };
 
@@ -83,14 +85,14 @@ const STAGE_LABELS = {
 
 const PARALLEL_NODES = ["financialAgent", "marketAgent", "riskAgent"];
 
-export async function* streamResearch(companyName) {
+export async function* streamResearch(companyName, provider = "gemini") {
   try {
-    const state = { company: companyName };
+    const state = { company: companyName, provider };
     let parallelCompleted = 0;
 
     yield { type: "progress", stage: "company", label: "Reading company reports" };
 
-    const stream = await graph.stream({ company: companyName });
+    const stream = await graph.stream({ company: companyName, provider });
 
     for await (const chunk of stream) {
       const [nodeName, update] = Object.entries(chunk)[0];
@@ -116,7 +118,7 @@ export async function* streamResearch(companyName) {
     yield { type: "result", state };
   } catch (error) {
     console.warn(`Graph streaming failed, streaming mock progress: ${error.message}`);
-    
+
     yield { type: "progress", stage: "company", label: "Reading company reports" };
     await new Promise((r) => setTimeout(r, 600));
     yield { type: "progress", stage: "parallel", label: STAGE_LABELS.companyAgent };
@@ -130,7 +132,7 @@ export async function* streamResearch(companyName) {
     yield { type: "progress", stage: "decision", label: STAGE_LABELS.decisionAgent };
     await new Promise((r) => setTimeout(r, 500));
 
-    const mockState = getMockState(companyName);
+    const mockState = getMockState(companyName, provider);
     yield { type: "result", state: mockState };
   }
 }

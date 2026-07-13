@@ -10,7 +10,7 @@ const riskSchema = z.object({
 });
 
 const runRiskAgent = async (state) => {
-  const llm = getLLM().withStructuredOutput(riskSchema, { name: "RiskAnalysis" });
+  const llm = getLLM(state.provider).withStructuredOutput(riskSchema, { name: "RiskAnalysis" });
 
   const result = await llm.invoke([
     {

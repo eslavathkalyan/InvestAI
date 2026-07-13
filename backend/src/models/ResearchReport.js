@@ -40,6 +40,7 @@ class ResearchReportInstance {
       this.analysis = {};
     }
 
+    this.provider = row.provider || "gemini";
     this.isShared = row.is_shared;
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
@@ -50,8 +51,8 @@ class ResearchReportInstance {
       const q = `
         INSERT INTO reports (
           _id, user_id, company, ticker, decision, confidence, summary, 
-          positive_factors, risks, analysis, is_shared, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
+          positive_factors, risks, analysis, is_shared, provider, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)
         ON CONFLICT (_id) DO UPDATE SET
           user_id = EXCLUDED.user_id,
           company = EXCLUDED.company,
@@ -63,6 +64,7 @@ class ResearchReportInstance {
           risks = EXCLUDED.risks,
           analysis = EXCLUDED.analysis,
           is_shared = EXCLUDED.is_shared,
+          provider = EXCLUDED.provider,
           updated_at = CURRENT_TIMESTAMP
         RETURNING *;
       `;
@@ -78,7 +80,8 @@ class ResearchReportInstance {
         JSON.stringify(this.positiveFactors || []),
         JSON.stringify(this.risks || []),
         JSON.stringify(this.analysis || {}),
-        this.isShared || false
+        this.isShared || false,
+        this.provider || "gemini"
       ]);
 
       return this;
@@ -96,8 +99,8 @@ const ResearchReport = {
 
       const q = `
         INSERT INTO reports (
-          _id, user_id, company, ticker, decision, confidence, summary, positive_factors, risks, analysis, is_shared
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          _id, user_id, company, ticker, decision, confidence, summary, positive_factors, risks, analysis, is_shared, provider
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *;
       `;
 
@@ -112,7 +115,8 @@ const ResearchReport = {
         JSON.stringify(data.positiveFactors || []),
         JSON.stringify(data.risks || []),
         JSON.stringify(data.analysis || {}),
-        data.isShared || false
+        data.isShared || false,
+        data.provider || "gemini"
       ]);
 
       return new ResearchReportInstance(res.rows[0]);

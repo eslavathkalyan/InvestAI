@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Globe, X } from "lucide-react";
+import { Search, Globe, X, Bot } from "lucide-react";
 import ResearchRoom from "../components/ResearchRoom";
 import DecisionCard from "../components/DecisionCard";
 import ReasoningPanel from "../components/ReasoningPanel";
 import FinancialChart from "../components/FinancialChart";
+import AgentSelector from "../components/AgentSelector";
 import { streamResearch } from "../api/streamResearch";
 import { getReportById, shareReport } from "../api/research";
 import { useAuth } from "../context/AuthContext";
@@ -16,6 +17,12 @@ const SUBSTEP_LABELS = {
   financialAgent: "Financial",
   marketAgent: "Market",
   riskAgent: "Risk",
+};
+
+const PROVIDER_META = {
+  gemini: { label: "Gemini 2.5", color: "from-blue-500 to-purple-500" },
+  openai: { label: "GPT-4o Mini", color: "from-emerald-500 to-teal-500" },
+  claude: { label: "Claude 3.5", color: "from-orange-400 to-rose-500" },
 };
 
 const Research = () => {
@@ -31,11 +38,12 @@ const Research = () => {
   const [error, setError] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState("gemini");
 
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
   const [sharesInput, setSharesInput] = useState("10");
-  const [investPrice] = useState(150); 
+  const [investPrice] = useState(150);
   const [investLoading, setInvestLoading] = useState(false);
   const [investError, setInvestError] = useState("");
   const [investSuccess, setInvestSuccess] = useState("");
@@ -56,7 +64,7 @@ const Research = () => {
     e.preventDefault();
     setInvestError("");
     setInvestSuccess("");
-    
+
     const shares = Number(sharesInput);
     if (!shares || isNaN(shares) || shares <= 0) {
       setInvestError("Please enter a valid number of shares.");
@@ -115,7 +123,6 @@ const Research = () => {
     }
 
     if (!company) {
-      
       setStage("idle");
       setReport(null);
       setCompletedSubsteps([]);
@@ -135,6 +142,7 @@ const Research = () => {
 
     streamResearch(company, {
       signal: controller.signal,
+      provider: selectedProvider,
       onEvent: (type, data) => {
         if (type === "progress") {
           setStage(data.stage);
@@ -179,17 +187,14 @@ const Research = () => {
       !report.userId);
 
   const getHeaderTitle = () => {
-    if (stage === "done" && report) {
-      return report.company;
-    }
-    if (company) {
-      return `Researching ${company}...`;
-    }
-    if (reportId) {
-      return "AI Research Report";
-    }
+    if (stage === "done" && report) return report.company;
+    if (company) return `Researching ${company}...`;
+    if (reportId) return "AI Research Report";
     return "AI Investment Research";
   };
+
+  const reportProvider = report?.provider || "gemini";
+  const providerMeta = PROVIDER_META[reportProvider] || PROVIDER_META.gemini;
 
   if (loadingReport) {
     return (
@@ -201,21 +206,36 @@ const Research = () => {
 
   if (!company && !reportId) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 text-center">
-        <h1 className="font-display text-2xl font-semibold text-ink mb-2">Research a company</h1>
-        <p className="text-ink/60 mb-6 max-w-sm">
-          Enter a company name and the AI analyst will research it end to end.
-        </p>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 text-center gap-6">
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-ink mb-2">Research a company</h1>
+          <p className="text-ink/60 max-w-sm">
+            Enter a company name and your chosen AI agent will research it end to end.
+          </p>
+        </div>
+
+        {/* Agent Selector */}
+        <div className="w-full max-w-lg">
+          <AgentSelector selected={selectedProvider} onSelect={setSelectedProvider} />
+        </div>
+
+        {/* Search form */}
         <form onSubmit={handleSearch} className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/40" />
           <input
             autoFocus
+            id="company-search-input"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="e.g. Tesla"
             className="w-full bg-paper border border-ink/15 rounded-full pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40"
           />
         </form>
+
+        {/* Active agent hint */}
+        <p className="text-[11px] text-ink/35 -mt-3">
+          Powered by <span className="font-semibold text-ink/50">{PROVIDER_META[selectedProvider]?.label || "Gemini 2.5"}</span>
+        </p>
       </div>
     );
   }
@@ -223,13 +243,24 @@ const Research = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       <div className="flex items-center justify-between gap-4 mb-6 border-b border-ink/5 pb-4">
-        <h1 className="font-display text-xl font-bold text-ink">
-          {getHeaderTitle()}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="font-display text-xl font-bold text-ink">
+            {getHeaderTitle()}
+          </h1>
+
+          {/* Agent badge — shown on running and completed reports */}
+          {(stage !== "idle") && (
+            <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r ${providerMeta.color} text-white shadow-sm`}>
+              <Bot className="w-3 h-3" />
+              {providerMeta.label}
+            </span>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {stage === "done" && report && isOwner && (
             <button
+              id="share-report-btn"
               onClick={handleShareToggle}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${
                 report.isShared
@@ -244,6 +275,7 @@ const Research = () => {
 
           {stage === "done" && report && (
             <button
+              id="invest-btn"
               onClick={handleOpenInvestModal}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-navy text-white text-xs font-semibold hover:bg-navy/95 transition shadow-card cursor-pointer"
             >
@@ -266,6 +298,7 @@ const Research = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/40" />
               <input
                 autoFocus
+                id="company-search-retry"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="e.g. Tesla or AAPL"
@@ -282,7 +315,6 @@ const Research = () => {
             <ResearchRoom stage={stage} label={label} />
           </div>
 
-          {}
           <div className="flex items-center justify-center gap-6">
             {Object.entries(SUBSTEP_LABELS).map(([node, name]) => (
               <div key={node} className="flex items-center gap-1.5 text-xs">
@@ -312,11 +344,12 @@ const Research = () => {
         </div>
       )}
 
-      {}
+      {/* Invest Modal */}
       {showInvestModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/40 backdrop-blur-xs">
           <div className="w-full max-w-md bg-paper border border-ink/5 rounded-2xl p-6 shadow-card relative">
             <button
+              id="close-invest-modal"
               disabled={investLoading}
               onClick={() => setShowInvestModal(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-ink/5 text-ink/50"
@@ -366,6 +399,7 @@ const Research = () => {
                 <div>
                   <label className="block text-xs font-semibold text-ink/70 mb-1">Shares to Buy</label>
                   <input
+                    id="shares-input"
                     required
                     type="number"
                     min="1"
@@ -384,6 +418,7 @@ const Research = () => {
               </div>
 
               <button
+                id="confirm-invest-btn"
                 disabled={investLoading}
                 type="submit"
                 className="w-full py-3 rounded-xl bg-navy text-white text-sm font-semibold hover:bg-navy/90 transition shadow-card mt-2 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
