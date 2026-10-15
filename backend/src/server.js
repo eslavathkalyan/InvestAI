@@ -1,4 +1,4 @@
-```javascript
+
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -106,4 +106,4 @@ const startServer = async () => {
 };
 
 startServer();
-```
+
